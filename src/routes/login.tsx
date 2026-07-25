@@ -25,7 +25,7 @@ function LoginPage() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user) navigate({ to: "/", replace: true });
+      if (data.user) navigate({ to: "/feed", replace: true });
     });
   }, [navigate]);
 
@@ -39,7 +39,7 @@ function LoginPage() {
       return;
     }
     toast.success("Welcome back");
-    navigate({ to: "/", replace: true });
+    navigate({ to: "/feed", replace: true });
   }
 
   return <AuthShell title="Welcome back" subtitle="Sign in to keep the glow going.">
