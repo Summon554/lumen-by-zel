@@ -1,43 +1,36 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { LogOut, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   ssr: false,
-  component: Home,
+  head: () => ({
+    meta: [
+      { title: "Lumen — Where your feed glows" },
+      { name: "description", content: "Connect. Share. Glow together on Lumen." },
+      { property: "og:title", content: "Lumen — Where your feed glows" },
+      { property: "og:description", content: "Connect. Share. Glow together on Lumen." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: LandingPage,
 });
 
-function Home() {
+function LandingPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [name, setName] = useState<string>("");
-  const [email, setEmail] = useState<string>("");
 
   useEffect(() => {
-    (async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!data.user) {
-        navigate({ to: "/login", replace: true });
-        return;
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        navigate({ to: "/feed", replace: true });
+      } else {
+        setLoading(false);
       }
-      setEmail(data.user.email ?? "");
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("name")
-        .eq("id", data.user.id)
-        .maybeSingle();
-      setName(profile?.name || (data.user.user_metadata?.name as string) || "friend");
-      setLoading(false);
-    })();
+    });
   }, [navigate]);
-
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    toast.success("Signed out");
-    navigate({ to: "/login", replace: true });
-  }
 
   if (loading) {
     return (
@@ -52,49 +45,57 @@ function Home() {
 
   return (
     <main
-      className="min-h-screen px-6 py-10 flex flex-col"
+      className="relative min-h-screen overflow-hidden flex flex-col items-center justify-center px-6 py-10 text-center"
       style={{ background: "var(--gradient-bg)" }}
     >
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div
-            className="h-9 w-9 rounded-full grid place-items-center text-primary-foreground"
-            style={{ background: "var(--gradient-glow)", boxShadow: "var(--shadow-glow)" }}
-          >
-            <Sparkles size={18} />
-          </div>
-          <span className="text-lg font-semibold tracking-tight">Lumen</span>
-        </div>
-        <button
-          onClick={handleLogout}
-          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/60 backdrop-blur px-3.5 py-1.5 text-sm text-foreground hover:bg-accent transition"
-        >
-          <LogOut size={14} /> Logout
-        </button>
-      </header>
-
-      <section className="flex-1 flex flex-col items-center justify-center text-center gap-6">
+      {/* Subtle animated glow background */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
-          className="h-24 w-24 rounded-full grid place-items-center"
+          className="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-primary/20 blur-3xl animate-pulse-glow"
+        />
+        <div
+          className="absolute top-1/3 -right-24 h-72 w-72 rounded-full bg-primary-glow/20 blur-3xl animate-pulse-glow"
+          style={{ animationDelay: "2s" }}
+        />
+        <div
+          className="absolute -bottom-24 left-1/4 h-80 w-80 rounded-full bg-primary/15 blur-3xl animate-pulse-glow"
+          style={{ animationDelay: "4s" }}
+        />
+      </div>
+
+      <div className="relative z-10 flex flex-col items-center gap-8 max-w-sm">
+        <div
+          className="h-24 w-24 sm:h-28 sm:w-28 rounded-full grid place-items-center animate-float"
           style={{ background: "var(--gradient-glow)", boxShadow: "var(--shadow-glow)" }}
         >
-          <Sparkles className="text-primary-foreground" size={44} />
+          <Sparkles className="text-primary-foreground" size={56} />
         </div>
-        <h1 className="text-4xl font-semibold tracking-tight">
-          Welcome to{" "}
-          <span
-            className="bg-clip-text text-transparent"
-            style={{ backgroundImage: "var(--gradient-glow)" }}
+
+        <div className="space-y-3">
+          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">
+            Lumen — Where your feed glows
+          </h1>
+          <p className="text-base sm:text-lg text-muted-foreground">
+            Connect. Share. Glow together.
+          </p>
+        </div>
+
+        <div className="flex flex-col w-full gap-3">
+          <Link
+            to="/signup"
+            className="inline-flex items-center justify-center rounded-xl py-3 text-base font-medium text-primary-foreground transition hover:opacity-90"
+            style={{ background: "var(--gradient-glow)", boxShadow: "var(--shadow-glow)" }}
           >
-            Lumen
-          </span>{" "}
-          {name}
-        </h1>
-        <p className="text-muted-foreground max-w-sm">
-          You're signed in as <span className="text-foreground">{email}</span>. Your
-          feed will glow here soon.
-        </p>
-      </section>
+            Sign Up
+          </Link>
+          <Link
+            to="/login"
+            className="inline-flex items-center justify-center rounded-xl py-3 text-base font-medium text-foreground transition border border-border bg-card/60 backdrop-blur hover:bg-accent"
+          >
+            Log In
+          </Link>
+        </div>
+      </div>
     </main>
   );
 }

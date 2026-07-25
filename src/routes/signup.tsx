@@ -26,7 +26,7 @@ function SignupPage() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user) navigate({ to: "/", replace: true });
+      if (data.user) navigate({ to: "/feed", replace: true });
     });
   }, [navigate]);
 
@@ -51,7 +51,7 @@ function SignupPage() {
       return;
     }
     toast.success("Welcome to Lumen ✨");
-    navigate({ to: "/", replace: true });
+    navigate({ to: "/feed", replace: true });
   }
 
   return (
