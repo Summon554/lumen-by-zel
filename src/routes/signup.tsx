@@ -23,15 +23,20 @@ function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [agreed, setAgreed] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user) navigate({ to: "/feed", replace: true });
+      if (data.user) navigate({ to: "/home", replace: true });
     });
   }, [navigate]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!agreed) {
+      toast.error("Please agree to the Terms and Privacy Policy");
+      return;
+    }
     if (password.length < 6) {
       toast.error("Password must be at least 6 characters");
       return;
@@ -51,7 +56,7 @@ function SignupPage() {
       return;
     }
     toast.success("Welcome to Lumen ✨");
-    navigate({ to: "/feed", replace: true });
+    navigate({ to: "/home", replace: true });
   }
 
   return (
@@ -66,9 +71,23 @@ function SignupPage() {
           onChange={setPassword}
           autoComplete="new-password"
         />
+        <label className="flex items-start gap-2 text-sm text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            className="mt-1 h-4 w-4 accent-primary"
+          />
+          <span>
+            I agree to Lumen{" "}
+            <Link to="/terms" className="text-foreground underline underline-offset-4">Terms</Link>{" "}
+            and{" "}
+            <Link to="/privacy" className="text-foreground underline underline-offset-4">Privacy Policy</Link>
+          </span>
+        </label>
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !agreed}
           className="w-full rounded-xl py-3 text-primary-foreground font-medium transition disabled:opacity-60"
           style={{ background: "var(--gradient-glow)", boxShadow: "var(--shadow-glow)" }}
         >
