@@ -15,7 +15,6 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HomeRouteImport } from './routes/home'
-import { Route as IndexRouteImport } from './routes/index'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -47,14 +46,8 @@ const HomeRoute = HomeRouteImport.update({
   path: '/home',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
   '/home': typeof HomeRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
@@ -63,7 +56,6 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
   '/home': typeof HomeRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
@@ -73,7 +65,6 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
   '/home': typeof HomeRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
@@ -83,19 +74,11 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/home'
-    | '/login'
-    | '/privacy'
-    | '/profile'
-    | '/signup'
-    | '/terms'
+  fullPaths: '/home' | '/login' | '/privacy' | '/profile' | '/signup' | '/terms'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/home' | '/login' | '/privacy' | '/profile' | '/signup' | '/terms'
+  to: '/home' | '/login' | '/privacy' | '/profile' | '/signup' | '/terms'
   id:
     | '__root__'
-    | '/'
     | '/home'
     | '/login'
     | '/privacy'
@@ -105,7 +88,6 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
   HomeRoute: typeof HomeRoute
   LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -158,18 +140,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HomeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
   HomeRoute: HomeRoute,
   LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,
