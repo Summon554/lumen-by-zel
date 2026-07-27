@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowLeft, Camera, Sparkles } from "lucide-react";
 import { getSignedUrl, getSignedUrls, uploadUserFile } from "@/lib/storage";
+import { isFounder } from "@/lib/founder";
+import { FounderBadge } from "@/components/FounderBadge";
 
 export const Route = createFileRoute("/profile")({
   ssr: false,
@@ -27,6 +29,7 @@ function ProfilePage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [avatarPath, setAvatarPath] = useState<string | null>(null);
@@ -35,6 +38,8 @@ function ProfilePage() {
   const [postUrls, setPostUrls] = useState<Record<string, string>>({});
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [followers, setFollowers] = useState(0);
+  const [following, setFollowing] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -44,7 +49,8 @@ function ProfilePage() {
         return;
       }
       setUserId(data.user.id);
-      const [{ data: profile }, { data: postRows }] = await Promise.all([
+      setEmail(data.user.email ?? null);
+      const [{ data: profile }, { data: postRows }, followersRes, followingRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", data.user.id).maybeSingle(),
         supabase
           .from("posts")
@@ -52,6 +58,8 @@ function ProfilePage() {
           .eq("user_id", data.user.id)
           .order("created_at", { ascending: false })
           .limit(9),
+        (supabase as any).from("follows").select("*", { count: "exact", head: true }).eq("following_id", data.user.id),
+        (supabase as any).from("follows").select("*", { count: "exact", head: true }).eq("follower_id", data.user.id),
       ]);
       setName(profile?.name ?? "");
       setBio(profile?.bio ?? "");
@@ -61,6 +69,8 @@ function ProfilePage() {
       setPosts(list);
       const paths = list.map((p) => p.image_url).filter(Boolean) as string[];
       setPostUrls(await getSignedUrls(paths));
+      setFollowers(followersRes.count ?? 0);
+      setFollowing(followingRes.count ?? 0);
       setLoading(false);
     })();
   }, [navigate]);
@@ -102,6 +112,8 @@ function ProfilePage() {
       </main>
     );
   }
+
+  const founder = isFounder(email);
 
   return (
     <main className="min-h-screen pb-16" style={{ background: "var(--gradient-bg)" }}>
@@ -150,9 +162,28 @@ function ProfilePage() {
           {!editing ? (
             <>
               <div>
-                <h1 className="text-xl font-semibold tracking-tight">{name || "Lumen friend"}</h1>
+                <h1 className="text-xl font-semibold tracking-tight flex items-center gap-2 justify-center">
+                  {name || "Lumen friend"}
+                  {founder && <FounderBadge />}
+                </h1>
                 {bio && <p className="text-sm text-muted-foreground mt-1 max-w-xs">{bio}</p>}
               </div>
+
+              <div className="flex items-center gap-6 text-sm">
+                <div className="text-center">
+                  <div className="font-semibold">{posts.length}</div>
+                  <div className="text-xs text-muted-foreground">Posts</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-semibold">{followers}</div>
+                  <div className="text-xs text-muted-foreground">Followers</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-semibold">{following}</div>
+                  <div className="text-xs text-muted-foreground">Following</div>
+                </div>
+              </div>
+
               <button
                 onClick={() => setEditing(true)}
                 className="rounded-full px-4 py-1.5 text-sm border border-border bg-card/70 hover:bg-accent transition"
