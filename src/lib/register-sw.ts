@@ -1,5 +1,6 @@
 // Guarded PWA registration wrapper. Never registers in dev, Lovable preview,
 // or when ?sw=off is present. Exposes an update callback for the UI banner.
+// @ts-expect-error - virtual module provided by vite-plugin-pwa at build time
 import { registerSW } from "virtual:pwa-register";
 
 const SW_URL = "/sw.js";
