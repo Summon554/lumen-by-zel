@@ -21,7 +21,7 @@ export const Route = createFileRoute("/u/$id")({
 });
 
 type Post = { id: string; image_url: string | null; caption: string | null; created_at: string };
-type Profile = { id: string; name: string | null; bio: string | null; email: string | null; avatar_url: string | null };
+type Profile = { id: string; name: string | null; bio: string | null; email: string | null; avatar_url: string | null; is_private?: boolean | null };
 
 function UserProfilePage() {
   const { id } = useParams({ from: "/u/$id" });
@@ -34,6 +34,7 @@ function UserProfilePage() {
   const [followers, setFollowers] = useState(0);
   const [following, setFollowing] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [requestPending, setRequestPending] = useState(false);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -49,12 +50,13 @@ function UserProfilePage() {
         return;
       }
       setMeId(auth.user.id);
-      const [{ data: prof }, { data: postRows }, followersRes, followingRes, meFollowsRes] = await Promise.all([
-        supabase.from("profiles").select("id,name,bio,email,avatar_url").eq("id", id).maybeSingle(),
+      const [{ data: prof }, { data: postRows }, followersRes, followingRes, meFollowsRes, meReqRes] = await Promise.all([
+        supabase.from("profiles").select("id,name,bio,email,avatar_url,is_private").eq("id", id).maybeSingle(),
         supabase.from("posts").select("id,image_url,caption,created_at").eq("user_id", id).order("created_at", { ascending: false }).limit(9),
         (supabase as any).from("follows").select("*", { count: "exact", head: true }).eq("following_id", id),
         (supabase as any).from("follows").select("*", { count: "exact", head: true }).eq("follower_id", id),
         (supabase as any).from("follows").select("id").eq("follower_id", auth.user.id).eq("following_id", id).maybeSingle(),
+        (supabase as any).from("follow_requests").select("id,status").eq("requester_id", auth.user.id).eq("target_id", id).maybeSingle(),
       ]);
       setProfile(prof as Profile | null);
       if (prof?.avatar_url) setAvatarUrl(await getSignedUrl(prof.avatar_url));
@@ -64,6 +66,7 @@ function UserProfilePage() {
       setFollowers(followersRes.count ?? 0);
       setFollowing(followingRes.count ?? 0);
       setIsFollowing(!!meFollowsRes.data);
+      setRequestPending(meReqRes?.data?.status === "pending");
       setLoading(false);
     })();
   }, [id, navigate]);
@@ -75,6 +78,31 @@ function UserProfilePage() {
       await (supabase as any).from("follows").delete().eq("follower_id", meId).eq("following_id", profile.id);
       setIsFollowing(false);
       setFollowers((c) => Math.max(0, c - 1));
+    } else if (profile.is_private && !isFollowing) {
+      if (requestPending) {
+        await (supabase as any)
+          .from("follow_requests")
+          .delete()
+          .eq("requester_id", meId)
+          .eq("target_id", profile.id);
+        setRequestPending(false);
+      } else {
+        const { error } = await (supabase as any)
+          .from("follow_requests")
+          .insert({ requester_id: meId, target_id: profile.id, status: "pending" });
+        if (error) {
+          toast.error(error.message);
+        } else {
+          setRequestPending(true);
+          await (supabase as any).from("notifications").insert({
+            user_id: profile.id,
+            actor_id: meId,
+            type: "follow_request",
+            post_id: null,
+          });
+          toast.success("Follow request sent");
+        }
+      }
     } else {
       const { error } = await (supabase as any).from("follows").insert({ follower_id: meId, following_id: profile.id });
       if (error) {
@@ -165,19 +193,30 @@ function UserProfilePage() {
             disabled={busy}
             className="rounded-full px-6 py-2 text-sm font-medium disabled:opacity-60 transition"
             style={
-              isFollowing
+              isFollowing || requestPending
                 ? { border: "1px solid var(--color-border)", background: "hsl(0 0% 100% / 0.6)" }
                 : { background: "var(--gradient-glow)", boxShadow: "var(--shadow-glow)", color: "var(--color-primary-foreground)" }
             }
           >
-            {isFollowing ? "Following" : "Follow"}
+            {isFollowing
+              ? "Following"
+              : requestPending
+              ? "Requested"
+              : profile.is_private
+              ? "Request to Follow"
+              : "Follow"}
           </button>
         </div>
       </section>
 
       <section className="max-w-lg mx-auto px-4 mt-8">
         <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">Posts</h2>
-        {posts.length === 0 ? (
+        {profile.is_private && !isFollowing ? (
+          <div className="rounded-2xl border border-border bg-card/60 p-8 text-center text-sm text-muted-foreground">
+            <Sparkles size={18} className="mx-auto mb-2 text-primary" />
+            This account is private. Follow to see their posts.
+          </div>
+        ) : posts.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-10">No posts yet.</p>
         ) : (
           <div className="grid grid-cols-3 gap-1.5">
