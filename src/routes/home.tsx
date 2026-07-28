@@ -9,13 +9,13 @@ import {
   User as UserIcon,
   Image as ImageIcon,
   LogOut,
-  Send,
   Bell,
   Search as SearchIcon,
 } from "lucide-react";
 import { getSignedUrls, uploadUserFile } from "@/lib/storage";
 import { isFounder } from "@/lib/founder";
 import { FounderBadge } from "@/components/FounderBadge";
+import { CommentThread, type ThreadComment, type CommentLikeState } from "@/components/CommentThread";
 
 export const Route = createFileRoute("/home")({
   ssr: false,
@@ -40,13 +40,7 @@ type PostRow = {
   image_url: string | null;
   created_at: string;
 };
-type CommentRow = {
-  id: string;
-  post_id: string;
-  user_id: string;
-  content: string;
-  created_at: string;
-};
+type CommentRow = ThreadComment;
 
 function HomePage() {
   const navigate = useNavigate();
@@ -57,6 +51,7 @@ function HomePage() {
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [likes, setLikes] = useState<Record<string, { count: number; likedByMe: boolean }>>({});
   const [comments, setComments] = useState<Record<string, CommentRow[]>>({});
+  const [commentLikes, setCommentLikes] = useState<Record<string, CommentLikeState>>({});
   const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
   const [caption, setCaption] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -146,6 +141,23 @@ function HomePage() {
         (c[row.post_id] ||= []).push(row as CommentRow);
       });
       setComments(c);
+
+      const commentIds = (commentRows ?? []).map((r) => r.id);
+      if (commentIds.length) {
+        const { data: cl } = await (supabase as any)
+          .from("comment_likes")
+          .select("comment_id,user_id")
+          .in("comment_id", commentIds);
+        const map: Record<string, CommentLikeState> = {};
+        commentIds.forEach((id) => (map[id] = { count: 0, likedByMe: false }));
+        (cl ?? []).forEach((r: any) => {
+          map[r.comment_id].count += 1;
+          if (r.user_id === uid) map[r.comment_id].likedByMe = true;
+        });
+        setCommentLikes(map);
+      } else {
+        setCommentLikes({});
+      }
 
       const commenterIds = Array.from(new Set((commentRows ?? []).map((r) => r.user_id)));
       const missing = commenterIds.filter((id) => !userIds.includes(id));
@@ -249,21 +261,12 @@ function HomePage() {
     }
   }
 
-  async function addComment(postId: string, content: string) {
-    if (!userId || !content.trim()) return;
-    const { data, error } = await supabase
-      .from("comments")
-      .insert({ post_id: postId, user_id: userId, content: content.trim() })
-      .select()
-      .single();
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    setComments((prev) => ({
-      ...prev,
-      [postId]: [...(prev[postId] ?? []), data as CommentRow],
-    }));
+  function localAddComment(postId: string, c: CommentRow) {
+    setComments((prev) => ({ ...prev, [postId]: [...(prev[postId] ?? []), c] }));
+    setCommentLikes((prev) => ({ ...prev, [c.id]: { count: 0, likedByMe: false } }));
+  }
+  function localChangeCommentLike(commentId: string, next: CommentLikeState) {
+    setCommentLikes((prev) => ({ ...prev, [commentId]: next }));
   }
 
   async function handleLogout() {
@@ -402,6 +405,7 @@ function HomePage() {
             }
             likeState={likes[post.id] ?? { count: 0, likedByMe: false }}
             comments={comments[post.id] ?? []}
+            commentLikes={commentLikes}
             profiles={profiles}
             avatarLookup={signedUrls}
             open={!!openComments[post.id]}
@@ -410,7 +414,8 @@ function HomePage() {
               setOpenComments((prev) => ({ ...prev, [post.id]: !prev[post.id] }))
             }
             onLike={() => toggleLike(post)}
-            onComment={(text) => addComment(post.id, text)}
+            onLocalAddComment={(c) => localAddComment(post.id, c)}
+            onLocalCommentLikeChange={localChangeCommentLike}
             onToggleFollow={() => toggleFollow(post.user_id)}
           />
         ))}
@@ -445,13 +450,15 @@ function PostCard({
   avatarUrl,
   likeState,
   comments,
+  commentLikes,
   profiles,
   avatarLookup,
   open,
   isFollowingAuthor,
   onToggleOpen,
   onLike,
-  onComment,
+  onLocalAddComment,
+  onLocalCommentLikeChange,
   onToggleFollow,
 }: {
   post: PostRow;
@@ -461,16 +468,17 @@ function PostCard({
   avatarUrl?: string;
   likeState: { count: number; likedByMe: boolean };
   comments: CommentRow[];
+  commentLikes: Record<string, CommentLikeState>;
   profiles: Record<string, Profile>;
   avatarLookup: Record<string, string>;
   open: boolean;
   isFollowingAuthor: boolean;
   onToggleOpen: () => void;
   onLike: () => void;
-  onComment: (text: string) => void;
+  onLocalAddComment: (c: CommentRow) => void;
+  onLocalCommentLikeChange: (commentId: string, next: CommentLikeState) => void;
   onToggleFollow: () => void;
 }) {
-  const [text, setText] = useState("");
   const when = useMemo(
     () => new Date(post.created_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }),
     [post.created_at]
@@ -523,48 +531,17 @@ function PostCard({
       </div>
       {open && (
         <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
-          {comments.length === 0 && <p className="text-xs text-muted-foreground">No comments yet.</p>}
-          {comments.map((c) => {
-            const p = profiles[c.user_id];
-            const av = p?.avatar_url ? avatarLookup[p.avatar_url] : undefined;
-            return (
-              <div key={c.id} className="flex items-start gap-2">
-                <Avatar name={p?.name} url={av} size={28} />
-                <div className="flex-1 rounded-2xl bg-background/60 px-3 py-2">
-                  <p className="text-xs font-medium flex items-center gap-1">
-                    {p?.name || "Lumen friend"}
-                    {isFounder(p?.email) && <FounderBadge size={10} showLabel={false} />}
-                  </p>
-                  <p className="text-sm whitespace-pre-wrap">{c.content}</p>
-                </div>
-              </div>
-            );
-          })}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              onComment(text);
-              setText("");
-            }}
-            className="flex items-center gap-2 pt-1"
-          >
-            <input
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Add a comment…"
-              maxLength={500}
-              className="flex-1 rounded-full border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-            />
-            <button
-              type="submit"
-              disabled={!text.trim()}
-              className="h-9 w-9 grid place-items-center rounded-full text-primary-foreground disabled:opacity-50"
-              style={{ background: "var(--gradient-glow)" }}
-              aria-label="Send comment"
-            >
-              <Send size={14} />
-            </button>
-          </form>
+          <CommentThread
+            postId={post.id}
+            postAuthorId={post.user_id}
+            meId={me}
+            comments={comments}
+            likes={commentLikes}
+            profiles={profiles}
+            avatarLookup={avatarLookup}
+            onLocalAdd={onLocalAddComment}
+            onLocalLikeChange={onLocalCommentLikeChange}
+          />
         </div>
       )}
     </article>
