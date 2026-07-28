@@ -1,0 +1,16 @@
+{
+  "name": "Lumen",
+  "short_name": "Lumen",
+  "description": "Lumen — where your feed glows.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F5FBFF",
+  "theme_color": "#3AA8FF",
+  "icons": [
+    { "src": "/lumen-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/lumen-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/lumen-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
