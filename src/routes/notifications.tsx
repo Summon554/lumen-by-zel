@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getSignedUrls } from "@/lib/storage";
-import { ArrowLeft, Bell, Heart, UserPlus } from "lucide-react";
+import { ArrowLeft, Bell, Heart, MessageCircle, UserPlus } from "lucide-react";
 import { isFounder } from "@/lib/founder";
 import { FounderBadge } from "@/components/FounderBadge";
 
@@ -23,7 +23,7 @@ type Notif = {
   id: string;
   user_id: string;
   actor_id: string;
-  type: "like" | "follow";
+  type: "like" | "follow" | "follow_request" | "comment" | "comment_reply" | "comment_like";
   post_id: string | null;
   read: boolean;
   created_at: string;
@@ -118,18 +118,14 @@ function NotificationsPage() {
                     <span className="font-medium">{actor?.name || "Someone"}</span>{" "}
                     {isFounder(actor?.email) && <FounderBadge size={12} showLabel={false} />}{" "}
                     <span className="text-muted-foreground">
-                      {n.type === "like" ? "liked your post" : "started following you"}
+                      {labelFor(n.type)}
                     </span>
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {new Date(n.created_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
                   </p>
                 </div>
-                {n.type === "like" ? (
-                  <Heart size={16} className="text-primary" />
-                ) : (
-                  <UserPlus size={16} className="text-primary" />
-                )}
+                {iconFor(n.type)}
               </Link>
             );
           })
@@ -137,4 +133,27 @@ function NotificationsPage() {
       </section>
     </main>
   );
+}
+
+function labelFor(t: Notif["type"]) {
+  switch (t) {
+    case "like":
+      return "liked your post";
+    case "follow":
+      return "started following you";
+    case "follow_request":
+      return "requested to follow you";
+    case "comment":
+      return "commented on your post";
+    case "comment_reply":
+      return "replied to your comment";
+    case "comment_like":
+      return "liked your comment";
+  }
+}
+
+function iconFor(t: Notif["type"]) {
+  if (t === "like" || t === "comment_like") return <Heart size={16} className="text-primary" />;
+  if (t === "comment" || t === "comment_reply") return <MessageCircle size={16} className="text-primary" />;
+  return <UserPlus size={16} className="text-primary" />;
 }

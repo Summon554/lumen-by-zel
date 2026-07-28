@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Camera, Sparkles } from "lucide-react";
+import { ArrowLeft, Camera, Lock, Sparkles } from "lucide-react";
 import { getSignedUrl, getSignedUrls, uploadUserFile } from "@/lib/storage";
 import { isFounder } from "@/lib/founder";
 import { FounderBadge } from "@/components/FounderBadge";
@@ -40,6 +40,8 @@ function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [followers, setFollowers] = useState(0);
   const [following, setFollowing] = useState(0);
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [savingPrivacy, setSavingPrivacy] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -64,6 +66,7 @@ function ProfilePage() {
       setName(profile?.name ?? "");
       setBio(profile?.bio ?? "");
       setAvatarPath(profile?.avatar_url ?? null);
+      setIsPrivate(Boolean((profile as any)?.is_private));
       if (profile?.avatar_url) setAvatarUrl(await getSignedUrl(profile.avatar_url));
       const list = (postRows ?? []) as Post[];
       setPosts(list);
@@ -103,6 +106,24 @@ function ProfilePage() {
     }
     toast.success("Profile saved");
     setEditing(false);
+  }
+
+  async function togglePrivacy(next: boolean) {
+    if (!userId) return;
+    setSavingPrivacy(true);
+    const prev = isPrivate;
+    setIsPrivate(next);
+    const { error } = await (supabase as any)
+      .from("profiles")
+      .update({ is_private: next })
+      .eq("id", userId);
+    setSavingPrivacy(false);
+    if (error) {
+      setIsPrivate(prev);
+      toast.error(error.message);
+    } else {
+      toast.success(next ? "Account set to private" : "Account is public");
+    }
   }
 
   if (loading) {
@@ -190,6 +211,31 @@ function ProfilePage() {
               >
                 Edit Profile
               </button>
+
+              <div className="w-full max-w-sm mt-2 rounded-2xl border border-border bg-card/70 backdrop-blur p-4 flex items-center gap-3 text-left">
+                <div className="h-9 w-9 rounded-full grid place-items-center bg-background/70 border border-border">
+                  <Lock size={16} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">Private Account</p>
+                  <p className="text-xs text-muted-foreground">
+                    When on, others must send a follow request.
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={isPrivate}
+                    disabled={savingPrivacy}
+                    onChange={(e) => togglePrivacy(e.target.checked)}
+                  />
+                  <span
+                    className="w-11 h-6 rounded-full bg-muted peer-checked:[background:var(--gradient-glow)] transition"
+                  />
+                  <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition peer-checked:translate-x-5" />
+                </label>
+              </div>
             </>
           ) : (
             <div className="w-full max-w-sm space-y-3 text-left">
