@@ -173,6 +173,7 @@ function ProfilePage() {
   }
 
   const founder = isFounder(email);
+  const username = (email?.split("@")[0] || "lumen").toLowerCase();
 
   return (
     <main className="min-h-screen pb-16" style={{ background: "var(--gradient-bg)" }}>
