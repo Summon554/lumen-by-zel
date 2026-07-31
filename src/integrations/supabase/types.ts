@@ -228,6 +228,7 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          is_founder: boolean
           is_private: boolean
           name: string | null
         }
@@ -237,6 +238,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id: string
+          is_founder?: boolean
           is_private?: boolean
           name?: string | null
         }
@@ -246,6 +248,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          is_founder?: boolean
           is_private?: boolean
           name?: string | null
         }
@@ -256,7 +259,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_view_user: { Args: { _target: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
