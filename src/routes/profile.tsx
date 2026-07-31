@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Camera, Lock, Sparkles } from "lucide-react";
+import { ArrowLeft, Camera, ImagePlus, Lock, Sparkles, UserCog } from "lucide-react";
 import { getSignedUrl, getSignedUrls, uploadUserFile } from "@/lib/storage";
 import { isFounder } from "@/lib/founder";
 import { FounderBadge } from "@/components/FounderBadge";
@@ -27,6 +27,7 @@ type Post = { id: string; image_url: string | null; caption: string | null; crea
 function ProfilePage() {
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
+  const coverRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
@@ -42,6 +43,10 @@ function ProfilePage() {
   const [following, setFollowing] = useState(0);
   const [isPrivate, setIsPrivate] = useState(false);
   const [savingPrivacy, setSavingPrivacy] = useState(false);
+  const [friends, setFriends] = useState(0);
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [accountType, setAccountType] = useState<"personal" | "professional">("personal");
+  const [savingType, setSavingType] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -52,7 +57,7 @@ function ProfilePage() {
       }
       setUserId(data.user.id);
       setEmail(data.user.email ?? null);
-      const [{ data: profile }, { data: postRows }, followersRes, followingRes] = await Promise.all([
+      const [{ data: profile }, { data: postRows }, followersRes, followingRes, followerIdsRes, followingIdsRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", data.user.id).maybeSingle(),
         supabase
           .from("posts")
@@ -62,18 +67,25 @@ function ProfilePage() {
           .limit(9),
         (supabase as any).from("follows").select("*", { count: "exact", head: true }).eq("following_id", data.user.id),
         (supabase as any).from("follows").select("*", { count: "exact", head: true }).eq("follower_id", data.user.id),
+        (supabase as any).from("follows").select("follower_id").eq("following_id", data.user.id),
+        (supabase as any).from("follows").select("following_id").eq("follower_id", data.user.id),
       ]);
       setName(profile?.name ?? "");
       setBio(profile?.bio ?? "");
       setAvatarPath(profile?.avatar_url ?? null);
       setIsPrivate(Boolean((profile as any)?.is_private));
+      setAccountType(((profile as any)?.account_type === "professional" ? "professional" : "personal"));
       if (profile?.avatar_url) setAvatarUrl(await getSignedUrl(profile.avatar_url));
+      if ((profile as any)?.cover_url) setCoverUrl(await getSignedUrl((profile as any).cover_url));
       const list = (postRows ?? []) as Post[];
       setPosts(list);
       const paths = list.map((p) => p.image_url).filter(Boolean) as string[];
       setPostUrls(await getSignedUrls(paths));
       setFollowers(followersRes.count ?? 0);
       setFollowing(followingRes.count ?? 0);
+      const followerIds = new Set(((followerIdsRes.data ?? []) as any[]).map((r) => r.follower_id));
+      const mutual = ((followingIdsRes.data ?? []) as any[]).filter((r) => followerIds.has(r.following_id));
+      setFriends(mutual.length);
       setLoading(false);
     })();
   }, [navigate]);
@@ -93,6 +105,48 @@ function ProfilePage() {
   }
 
   async function handleSave() {
+    if (!userId) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ name: name.trim() || null, bio: bio.trim() || null })
+      .eq("id", userId);
+    setSaving(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Profile saved");
+    setEditing(false);
+  }
+
+  async function handleCover(file: File) {
+    if (!userId) return;
+    try {
+      const path = await uploadUserFile(userId, file, "covers");
+      const { error } = await (supabase as any).from("profiles").update({ cover_url: path }).eq("id", userId);
+      if (error) throw error;
+      setCoverUrl(await getSignedUrl(path));
+      toast.success("Cover updated");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+    }
+  }
+
+  async function changeAccountType(next: "personal" | "professional") {
+    if (!userId || next === accountType) return;
+    const prev = accountType;
+    setAccountType(next);
+    setSavingType(true);
+    const { error } = await (supabase as any).from("profiles").update({ account_type: next }).eq("id", userId);
+    setSavingType(false);
+    if (error) {
+      setAccountType(prev);
+      toast.error(error.message);
+    }
+  }
+
+  async function handleSaveUnused() {
     if (!userId) return;
     setSaving(true);
     const { error } = await supabase
