@@ -223,8 +223,10 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_type: string
           avatar_url: string | null
           bio: string | null
+          cover_url: string | null
           created_at: string
           email: string | null
           id: string
@@ -233,8 +235,10 @@ export type Database = {
           name: string | null
         }
         Insert: {
+          account_type?: string
           avatar_url?: string | null
           bio?: string | null
+          cover_url?: string | null
           created_at?: string
           email?: string | null
           id: string
@@ -243,8 +247,10 @@ export type Database = {
           name?: string | null
         }
         Update: {
+          account_type?: string
           avatar_url?: string | null
           bio?: string | null
+          cover_url?: string | null
           created_at?: string
           email?: string | null
           id?: string
