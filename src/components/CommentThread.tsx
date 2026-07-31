@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { Heart, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { isFounder } from "@/lib/founder";
 import { FounderBadge } from "@/components/FounderBadge";
 
 export type ThreadComment = {
@@ -16,7 +15,7 @@ export type ThreadComment = {
 export type CommentAuthor = {
   id: string;
   name: string | null;
-  email: string | null;
+  is_founder: boolean | null;
   avatar_url: string | null;
 };
 export type CommentLikeState = { count: number; likedByMe: boolean };
@@ -137,7 +136,7 @@ export function CommentThread({
           <div className="rounded-2xl bg-background/60 px-3 py-2">
             <p className="text-xs font-medium flex items-center gap-1">
               {p?.name || "Lumen friend"}
-              {isFounder(p?.email) && <FounderBadge size={10} showLabel={false} />}
+              {p?.is_founder && <FounderBadge size={10} showLabel={false} />}
             </p>
             <p className="text-sm whitespace-pre-wrap">{c.content}</p>
           </div>

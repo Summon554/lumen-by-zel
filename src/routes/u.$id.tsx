@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { getSignedUrl, getSignedUrls } from "@/lib/storage";
-import { isFounder } from "@/lib/founder";
 import { FounderBadge } from "@/components/FounderBadge";
 
 export const Route = createFileRoute("/u/$id")({
@@ -21,7 +20,7 @@ export const Route = createFileRoute("/u/$id")({
 });
 
 type Post = { id: string; image_url: string | null; caption: string | null; created_at: string };
-type Profile = { id: string; name: string | null; bio: string | null; email: string | null; avatar_url: string | null; is_private?: boolean | null };
+type Profile = { id: string; name: string | null; bio: string | null; is_founder: boolean | null; avatar_url: string | null; is_private?: boolean | null };
 
 function UserProfilePage() {
   const { id } = useParams({ from: "/u/$id" });
@@ -51,7 +50,7 @@ function UserProfilePage() {
       }
       setMeId(auth.user.id);
       const [{ data: prof }, { data: postRows }, followersRes, followingRes, meFollowsRes, meReqRes] = await Promise.all([
-        supabase.from("profiles").select("id,name,bio,email,avatar_url,is_private").eq("id", id).maybeSingle(),
+        supabase.from("profiles").select("id,name,bio,is_founder,avatar_url,is_private").eq("id", id).maybeSingle(),
         supabase.from("posts").select("id,image_url,caption,created_at").eq("user_id", id).order("created_at", { ascending: false }).limit(9),
         (supabase as any).from("follows").select("*", { count: "exact", head: true }).eq("following_id", id),
         (supabase as any).from("follows").select("*", { count: "exact", head: true }).eq("follower_id", id),
@@ -168,7 +167,7 @@ function UserProfilePage() {
           <div>
             <h1 className="text-xl font-semibold tracking-tight flex items-center gap-2 justify-center">
               {profile.name || "Lumen friend"}
-              {isFounder(profile.email) && <FounderBadge />}
+              {profile.is_founder && <FounderBadge />}
             </h1>
             {profile.bio && <p className="text-sm text-muted-foreground mt-1 max-w-xs">{profile.bio}</p>}
           </div>

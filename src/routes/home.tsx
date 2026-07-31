@@ -13,7 +13,6 @@ import {
   Search as SearchIcon,
 } from "lucide-react";
 import { getSignedUrls, uploadUserFile } from "@/lib/storage";
-import { isFounder } from "@/lib/founder";
 import { FounderBadge } from "@/components/FounderBadge";
 import { CommentThread, type ThreadComment, type CommentLikeState } from "@/components/CommentThread";
 
@@ -32,7 +31,7 @@ export const Route = createFileRoute("/home")({
   component: HomePage,
 });
 
-type Profile = { id: string; name: string | null; email: string | null; avatar_url: string | null };
+type Profile = { id: string; name: string | null; is_founder: boolean | null; avatar_url: string | null };
 type PostRow = {
   id: string;
   user_id: string;
@@ -484,7 +483,7 @@ function PostCard({
     [post.created_at]
   );
   const isMine = me === post.user_id;
-  const founder = isFounder(author?.email);
+  const founder = !!author?.is_founder;
 
   return (
     <article className="rounded-2xl border border-border bg-card/70 backdrop-blur overflow-hidden">
