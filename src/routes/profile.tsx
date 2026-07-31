@@ -24,6 +24,19 @@ export const Route = createFileRoute("/profile")({
 
 type Post = { id: string; image_url: string | null; caption: string | null; created_at: string };
 
+function Count({ label, value, onClick }: { label: string; value: number; onClick?: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-baseline gap-1 hover:opacity-70 transition"
+    >
+      <span className="font-bold" style={{ fontSize: 14 }}>{value}</span>
+      <span className="text-muted-foreground font-normal" style={{ fontSize: 14 }}>{label}</span>
+    </button>
+  );
+}
+
 function ProfilePage() {
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
