@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Camera, Lock, Sparkles } from "lucide-react";
+import { ArrowLeft, Camera, ImagePlus, Lock, Sparkles, UserCog } from "lucide-react";
 import { getSignedUrl, getSignedUrls, uploadUserFile } from "@/lib/storage";
 import { isFounder } from "@/lib/founder";
 import { FounderBadge } from "@/components/FounderBadge";
@@ -24,9 +24,23 @@ export const Route = createFileRoute("/profile")({
 
 type Post = { id: string; image_url: string | null; caption: string | null; created_at: string };
 
+function Count({ label, value, onClick }: { label: string; value: number; onClick?: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-baseline gap-1 hover:opacity-70 transition"
+    >
+      <span className="font-bold" style={{ fontSize: 14 }}>{value}</span>
+      <span className="text-muted-foreground font-normal" style={{ fontSize: 14 }}>{label}</span>
+    </button>
+  );
+}
+
 function ProfilePage() {
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
+  const coverRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
@@ -42,6 +56,10 @@ function ProfilePage() {
   const [following, setFollowing] = useState(0);
   const [isPrivate, setIsPrivate] = useState(false);
   const [savingPrivacy, setSavingPrivacy] = useState(false);
+  const [friends, setFriends] = useState(0);
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [accountType, setAccountType] = useState<"personal" | "professional">("personal");
+  const [savingType, setSavingType] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -52,7 +70,7 @@ function ProfilePage() {
       }
       setUserId(data.user.id);
       setEmail(data.user.email ?? null);
-      const [{ data: profile }, { data: postRows }, followersRes, followingRes] = await Promise.all([
+      const [{ data: profile }, { data: postRows }, followersRes, followingRes, followerIdsRes, followingIdsRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", data.user.id).maybeSingle(),
         supabase
           .from("posts")
@@ -62,18 +80,25 @@ function ProfilePage() {
           .limit(9),
         (supabase as any).from("follows").select("*", { count: "exact", head: true }).eq("following_id", data.user.id),
         (supabase as any).from("follows").select("*", { count: "exact", head: true }).eq("follower_id", data.user.id),
+        (supabase as any).from("follows").select("follower_id").eq("following_id", data.user.id),
+        (supabase as any).from("follows").select("following_id").eq("follower_id", data.user.id),
       ]);
       setName(profile?.name ?? "");
       setBio(profile?.bio ?? "");
       setAvatarPath(profile?.avatar_url ?? null);
       setIsPrivate(Boolean((profile as any)?.is_private));
+      setAccountType(((profile as any)?.account_type === "professional" ? "professional" : "personal"));
       if (profile?.avatar_url) setAvatarUrl(await getSignedUrl(profile.avatar_url));
+      if ((profile as any)?.cover_url) setCoverUrl(await getSignedUrl((profile as any).cover_url));
       const list = (postRows ?? []) as Post[];
       setPosts(list);
       const paths = list.map((p) => p.image_url).filter(Boolean) as string[];
       setPostUrls(await getSignedUrls(paths));
       setFollowers(followersRes.count ?? 0);
       setFollowing(followingRes.count ?? 0);
+      const followerIds = new Set(((followerIdsRes.data ?? []) as any[]).map((r) => r.follower_id));
+      const mutual = ((followingIdsRes.data ?? []) as any[]).filter((r) => followerIds.has(r.following_id));
+      setFriends(mutual.length);
       setLoading(false);
     })();
   }, [navigate]);
@@ -108,6 +133,32 @@ function ProfilePage() {
     setEditing(false);
   }
 
+  async function handleCover(file: File) {
+    if (!userId) return;
+    try {
+      const path = await uploadUserFile(userId, file, "covers");
+      const { error } = await (supabase as any).from("profiles").update({ cover_url: path }).eq("id", userId);
+      if (error) throw error;
+      setCoverUrl(await getSignedUrl(path));
+      toast.success("Cover updated");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+    }
+  }
+
+  async function changeAccountType(next: "personal" | "professional") {
+    if (!userId || next === accountType) return;
+    const prev = accountType;
+    setAccountType(next);
+    setSavingType(true);
+    const { error } = await (supabase as any).from("profiles").update({ account_type: next }).eq("id", userId);
+    setSavingType(false);
+    if (error) {
+      setAccountType(prev);
+      toast.error(error.message);
+    }
+  }
+
   async function togglePrivacy(next: boolean) {
     if (!userId) return;
     setSavingPrivacy(true);
@@ -135,6 +186,7 @@ function ProfilePage() {
   }
 
   const founder = isFounder(email);
+  const username = (email?.split("@")[0] || "lumen").toLowerCase();
 
   return (
     <main className="min-h-screen pb-16" style={{ background: "var(--gradient-bg)" }}>
@@ -151,59 +203,96 @@ function ProfilePage() {
         </div>
       </header>
 
-      <section className="max-w-lg mx-auto px-4 pt-8">
-        <div className="flex flex-col items-center text-center gap-4">
-          <div className="relative">
-            <div
-              className="h-28 w-28 rounded-full overflow-hidden grid place-items-center text-primary-foreground text-4xl font-medium"
-              style={{ background: "var(--gradient-glow)", boxShadow: "var(--shadow-glow)" }}
-            >
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
-              ) : (
-                (name || "L").trim().charAt(0).toUpperCase()
-              )}
+      <section className="max-w-lg mx-auto">
+        {/* Cover photo — layered aurora glow, unique to Lumen */}
+        <div className="relative h-36 sm:h-44 overflow-hidden rounded-b-[2rem] border-b border-border">
+          {coverUrl ? (
+            <img src={coverUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          ) : (
+            <div className="absolute inset-0" style={{ background: "var(--gradient-glow)" }}>
+              <div className="absolute -top-10 -left-6 h-32 w-32 rounded-full bg-white/40 blur-2xl animate-float" />
+              <div className="absolute top-4 right-2 h-28 w-28 rounded-full bg-white/25 blur-2xl animate-pulse-glow" />
+              <div className="absolute bottom-[-2rem] left-1/3 h-32 w-40 rounded-full bg-primary/40 blur-3xl" />
             </div>
-            <button
-              onClick={() => fileRef.current?.click()}
-              className="absolute -bottom-1 -right-1 h-9 w-9 rounded-full grid place-items-center bg-card border border-border shadow-lg hover:bg-accent transition"
-              aria-label="Change photo"
-            >
-              <Camera size={16} />
-            </button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => e.target.files?.[0] && handleAvatar(e.target.files[0])}
-            />
-          </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-background/70 to-transparent" />
+          <button
+            onClick={() => coverRef.current?.click()}
+            className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs bg-card/80 border border-border backdrop-blur hover:bg-accent transition"
+            aria-label="Change cover photo"
+          >
+            <ImagePlus size={14} /> Cover
+          </button>
+          <input
+            ref={coverRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && handleCover(e.target.files[0])}
+          />
+        </div>
 
+        <div className="px-4 pt-4">
+          {/* Profile header row: 80px photo + text, 16px gap */}
+          <div className="flex items-center" style={{ gap: 16 }}>
+            <div className="relative shrink-0">
+              <div
+                className="rounded-full overflow-hidden grid place-items-center text-primary-foreground text-2xl font-medium border-4 border-background"
+                style={{ height: 80, width: 80, background: "var(--gradient-glow)", boxShadow: "var(--shadow-glow)" }}
+              >
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  (name || "L").trim().charAt(0).toUpperCase()
+                )}
+              </div>
+              <button
+                onClick={() => fileRef.current?.click()}
+                className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full grid place-items-center bg-card border border-border shadow-lg hover:bg-accent transition"
+                aria-label="Change photo"
+              >
+                <Camera size={14} />
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => e.target.files?.[0] && handleAvatar(e.target.files[0])}
+              />
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <h1 className="font-bold flex items-center gap-2" style={{ fontSize: 18 }}>
+                <span className="truncate">{name || "Lumen friend"}</span>
+                {founder && <FounderBadge />}
+              </h1>
+              <p className="text-muted-foreground truncate" style={{ fontSize: 14 }}>
+                @{username}
+              </p>
+
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+                {accountType === "personal" ? (
+                  <>
+                    <Count label="Friends" value={friends} />
+                    <Count label="Posts" value={posts.length} />
+                  </>
+                ) : (
+                  <>
+                    <Count label="Followers" value={followers} />
+                    <Count label="Following" value={following} />
+                    <Count label="Posts" value={posts.length} />
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-4 mt-5 flex flex-col items-center text-center gap-4">
           {!editing ? (
             <>
-              <div>
-                <h1 className="text-xl font-semibold tracking-tight flex items-center gap-2 justify-center">
-                  {name || "Lumen friend"}
-                  {founder && <FounderBadge />}
-                </h1>
-                {bio && <p className="text-sm text-muted-foreground mt-1 max-w-xs">{bio}</p>}
-              </div>
-
-              <div className="flex items-center gap-6 text-sm">
-                <div className="text-center">
-                  <div className="font-semibold">{posts.length}</div>
-                  <div className="text-xs text-muted-foreground">Posts</div>
-                </div>
-                <div className="text-center">
-                  <div className="font-semibold">{followers}</div>
-                  <div className="text-xs text-muted-foreground">Followers</div>
-                </div>
-                <div className="text-center">
-                  <div className="font-semibold">{following}</div>
-                  <div className="text-xs text-muted-foreground">Following</div>
-                </div>
-              </div>
+              {bio && <p className="text-sm text-muted-foreground max-w-xs">{bio}</p>}
 
               <button
                 onClick={() => setEditing(true)}
@@ -211,6 +300,29 @@ function ProfilePage() {
               >
                 Edit Profile
               </button>
+
+              <div className="w-full max-w-sm rounded-2xl border border-border bg-card/70 backdrop-blur p-4 flex items-center gap-3 text-left">
+                <div className="h-9 w-9 rounded-full grid place-items-center bg-background/70 border border-border">
+                  <UserCog size={16} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">Account Type</p>
+                  <p className="text-xs text-muted-foreground">Changes what counts show on your header.</p>
+                </div>
+                <div className="flex rounded-full border border-border overflow-hidden text-xs">
+                  {(["personal", "professional"] as const).map((t) => (
+                    <button
+                      key={t}
+                      disabled={savingType}
+                      onClick={() => changeAccountType(t)}
+                      className={`px-3 py-1.5 transition ${accountType === t ? "text-primary-foreground" : "hover:bg-accent"}`}
+                      style={accountType === t ? { background: "var(--gradient-glow)" } : undefined}
+                    >
+                      {t === "personal" ? "Personal" : "Pro"}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               <div className="w-full max-w-sm mt-2 rounded-2xl border border-border bg-card/70 backdrop-blur p-4 flex items-center gap-3 text-left">
                 <div className="h-9 w-9 rounded-full grid place-items-center bg-background/70 border border-border">

@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const BUCKET = "lumen-media";
 
-export async function uploadUserFile(userId: string, file: File, folder: "avatars" | "posts") {
+export async function uploadUserFile(userId: string, file: File, folder: "avatars" | "posts" | "covers") {
   const ext = file.name.split(".").pop() || "jpg";
   const path = `${userId}/${folder}/${crypto.randomUUID()}.${ext}`;
   const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
