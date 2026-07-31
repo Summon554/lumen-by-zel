@@ -146,22 +146,6 @@ function ProfilePage() {
     }
   }
 
-  async function handleSaveUnused() {
-    if (!userId) return;
-    setSaving(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({ name: name.trim() || null, bio: bio.trim() || null })
-      .eq("id", userId);
-    setSaving(false);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Profile saved");
-    setEditing(false);
-  }
-
   async function togglePrivacy(next: boolean) {
     if (!userId) return;
     setSavingPrivacy(true);
