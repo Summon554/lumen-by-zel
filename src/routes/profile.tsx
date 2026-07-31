@@ -189,59 +189,96 @@ function ProfilePage() {
         </div>
       </header>
 
-      <section className="max-w-lg mx-auto px-4 pt-8">
-        <div className="flex flex-col items-center text-center gap-4">
-          <div className="relative">
-            <div
-              className="h-28 w-28 rounded-full overflow-hidden grid place-items-center text-primary-foreground text-4xl font-medium"
-              style={{ background: "var(--gradient-glow)", boxShadow: "var(--shadow-glow)" }}
-            >
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
-              ) : (
-                (name || "L").trim().charAt(0).toUpperCase()
-              )}
+      <section className="max-w-lg mx-auto">
+        {/* Cover photo — layered aurora glow, unique to Lumen */}
+        <div className="relative h-36 sm:h-44 overflow-hidden rounded-b-[2rem] border-b border-border">
+          {coverUrl ? (
+            <img src={coverUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          ) : (
+            <div className="absolute inset-0" style={{ background: "var(--gradient-glow)" }}>
+              <div className="absolute -top-10 -left-6 h-32 w-32 rounded-full bg-white/40 blur-2xl animate-float" />
+              <div className="absolute top-4 right-2 h-28 w-28 rounded-full bg-white/25 blur-2xl animate-pulse-glow" />
+              <div className="absolute bottom-[-2rem] left-1/3 h-32 w-40 rounded-full bg-primary/40 blur-3xl" />
             </div>
-            <button
-              onClick={() => fileRef.current?.click()}
-              className="absolute -bottom-1 -right-1 h-9 w-9 rounded-full grid place-items-center bg-card border border-border shadow-lg hover:bg-accent transition"
-              aria-label="Change photo"
-            >
-              <Camera size={16} />
-            </button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => e.target.files?.[0] && handleAvatar(e.target.files[0])}
-            />
-          </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-background/70 to-transparent" />
+          <button
+            onClick={() => coverRef.current?.click()}
+            className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs bg-card/80 border border-border backdrop-blur hover:bg-accent transition"
+            aria-label="Change cover photo"
+          >
+            <ImagePlus size={14} /> Cover
+          </button>
+          <input
+            ref={coverRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && handleCover(e.target.files[0])}
+          />
+        </div>
 
+        <div className="px-4 pt-4">
+          {/* Profile header row: 80px photo + text, 16px gap */}
+          <div className="flex items-center" style={{ gap: 16 }}>
+            <div className="relative shrink-0">
+              <div
+                className="rounded-full overflow-hidden grid place-items-center text-primary-foreground text-2xl font-medium border-4 border-background"
+                style={{ height: 80, width: 80, background: "var(--gradient-glow)", boxShadow: "var(--shadow-glow)" }}
+              >
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  (name || "L").trim().charAt(0).toUpperCase()
+                )}
+              </div>
+              <button
+                onClick={() => fileRef.current?.click()}
+                className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full grid place-items-center bg-card border border-border shadow-lg hover:bg-accent transition"
+                aria-label="Change photo"
+              >
+                <Camera size={14} />
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => e.target.files?.[0] && handleAvatar(e.target.files[0])}
+              />
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <h1 className="font-bold flex items-center gap-2" style={{ fontSize: 18 }}>
+                <span className="truncate">{name || "Lumen friend"}</span>
+                {founder && <FounderBadge />}
+              </h1>
+              <p className="text-muted-foreground truncate" style={{ fontSize: 14 }}>
+                @{username}
+              </p>
+
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+                {accountType === "personal" ? (
+                  <>
+                    <Count label="Friends" value={friends} />
+                    <Count label="Posts" value={posts.length} />
+                  </>
+                ) : (
+                  <>
+                    <Count label="Followers" value={followers} />
+                    <Count label="Following" value={following} />
+                    <Count label="Posts" value={posts.length} />
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-4 mt-5 flex flex-col items-center text-center gap-4">
           {!editing ? (
             <>
-              <div>
-                <h1 className="text-xl font-semibold tracking-tight flex items-center gap-2 justify-center">
-                  {name || "Lumen friend"}
-                  {founder && <FounderBadge />}
-                </h1>
-                {bio && <p className="text-sm text-muted-foreground mt-1 max-w-xs">{bio}</p>}
-              </div>
-
-              <div className="flex items-center gap-6 text-sm">
-                <div className="text-center">
-                  <div className="font-semibold">{posts.length}</div>
-                  <div className="text-xs text-muted-foreground">Posts</div>
-                </div>
-                <div className="text-center">
-                  <div className="font-semibold">{followers}</div>
-                  <div className="text-xs text-muted-foreground">Followers</div>
-                </div>
-                <div className="text-center">
-                  <div className="font-semibold">{following}</div>
-                  <div className="text-xs text-muted-foreground">Following</div>
-                </div>
-              </div>
+              {bio && <p className="text-sm text-muted-foreground max-w-xs">{bio}</p>}
 
               <button
                 onClick={() => setEditing(true)}
@@ -249,6 +286,29 @@ function ProfilePage() {
               >
                 Edit Profile
               </button>
+
+              <div className="w-full max-w-sm rounded-2xl border border-border bg-card/70 backdrop-blur p-4 flex items-center gap-3 text-left">
+                <div className="h-9 w-9 rounded-full grid place-items-center bg-background/70 border border-border">
+                  <UserCog size={16} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">Account Type</p>
+                  <p className="text-xs text-muted-foreground">Changes what counts show on your header.</p>
+                </div>
+                <div className="flex rounded-full border border-border overflow-hidden text-xs">
+                  {(["personal", "professional"] as const).map((t) => (
+                    <button
+                      key={t}
+                      disabled={savingType}
+                      onClick={() => changeAccountType(t)}
+                      className={`px-3 py-1.5 transition ${accountType === t ? "text-primary-foreground" : "hover:bg-accent"}`}
+                      style={accountType === t ? { background: "var(--gradient-glow)" } : undefined}
+                    >
+                      {t === "personal" ? "Personal" : "Pro"}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               <div className="w-full max-w-sm mt-2 rounded-2xl border border-border bg-card/70 backdrop-blur p-4 flex items-center gap-3 text-left">
                 <div className="h-9 w-9 rounded-full grid place-items-center bg-background/70 border border-border">
