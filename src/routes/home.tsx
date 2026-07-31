@@ -103,7 +103,7 @@ function HomePage() {
     if (userIds.length) {
       const { data: profs } = await supabase
         .from("profiles")
-        .select("id,name,email,avatar_url")
+        .select("id,name,is_founder,avatar_url")
         .in("id", userIds);
       const map: Record<string, Profile> = {};
       (profs ?? []).forEach((p) => (map[p.id] = p as Profile));
@@ -163,7 +163,7 @@ function HomePage() {
       if (missing.length) {
         const { data: extra } = await supabase
           .from("profiles")
-          .select("id,name,email,avatar_url")
+          .select("id,name,is_founder,avatar_url")
           .in("id", missing);
         setProfiles((prev) => {
           const next = { ...prev };
