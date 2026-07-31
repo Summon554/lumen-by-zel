@@ -2,6 +2,7 @@
   "name": "Lumen",
   "short_name": "Lumen",
   "description": "Lumen — where your feed glows.",
+  "id": "/?v=2",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

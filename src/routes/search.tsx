@@ -2,7 +2,6 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getSignedUrls } from "@/lib/storage";
-import { isFounder } from "@/lib/founder";
 import { FounderBadge } from "@/components/FounderBadge";
 import { ArrowLeft, Search as SearchIcon } from "lucide-react";
 
@@ -19,7 +18,7 @@ export const Route = createFileRoute("/search")({
   component: SearchPage,
 });
 
-type Row = { id: string; name: string | null; email: string | null; avatar_url: string | null };
+type Row = { id: string; name: string | null; is_founder: boolean | null; avatar_url: string | null };
 
 function SearchPage() {
   const navigate = useNavigate();
@@ -44,8 +43,8 @@ function SearchPage() {
       setLoading(true);
       const { data } = await supabase
         .from("profiles")
-        .select("id,name,email,avatar_url")
-        .or(`name.ilike.%${term}%,email.ilike.%${term}%`)
+        .select("id,name,is_founder,avatar_url")
+        .ilike("name", `%${term}%`)
         .limit(30);
       const rows = (data ?? []) as Row[];
       setResults(rows);
@@ -69,7 +68,7 @@ function SearchPage() {
               autoFocus
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search people by name or email"
+              placeholder="Search people by name"
               className="w-full rounded-full border border-border bg-card pl-9 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -103,9 +102,8 @@ function SearchPage() {
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium flex items-center gap-1.5 truncate">
                   {r.name || "Lumen friend"}
-                  {isFounder(r.email) && <FounderBadge size={12} showLabel={false} />}
+                  {r.is_founder && <FounderBadge size={12} showLabel={false} />}
                 </p>
-                <p className="text-xs text-muted-foreground truncate">{r.email}</p>
               </div>
             </Link>
           );
