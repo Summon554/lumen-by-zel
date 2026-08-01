@@ -11,7 +11,6 @@ import {
   LogOut,
   Bell,
   Search as SearchIcon,
-  MessageCircle,
 } from "lucide-react";
 import { getSignedUrls, uploadUserFile } from "@/lib/storage";
 import { FounderBadge } from "@/components/FounderBadge";
