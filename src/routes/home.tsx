@@ -12,7 +12,6 @@ import {
   Bell,
   Search as SearchIcon,
 } from "lucide-react";
-import { MessageCircle } from "lucide-react";
 import { getSignedUrls, uploadUserFile } from "@/lib/storage";
 import { FounderBadge } from "@/components/FounderBadge";
 import { CommentThread, type ThreadComment, type CommentLikeState } from "@/components/CommentThread";
