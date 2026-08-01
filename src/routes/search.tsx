@@ -18,7 +18,14 @@ export const Route = createFileRoute("/search")({
   component: SearchPage,
 });
 
-type Row = { id: string; name: string | null; is_founder: boolean | null; avatar_url: string | null };
+type Row = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  is_founder: boolean | null;
+  avatar_url: string | null;
+  is_private: boolean | null;
+};
 
 function SearchPage() {
   const navigate = useNavigate();
@@ -26,10 +33,27 @@ function SearchPage() {
   const [results, setResults] = useState<Row[]>([]);
   const [avatars, setAvatars] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [me, setMe] = useState<string | null>(null);
+  const [following, setFollowing] = useState<Set<string>>(new Set());
+  const [requested, setRequested] = useState<Set<string>>(new Set());
+  const [busy, setBusy] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) navigate({ to: "/login", replace: true });
+      else {
+        setMe(data.user.id);
+        const [f, r] = await Promise.all([
+          supabase.from("follows").select("following_id").eq("follower_id", data.user.id),
+          supabase
+            .from("follow_requests")
+            .select("target_id")
+            .eq("requester_id", data.user.id)
+            .eq("status", "pending"),
+        ]);
+        setFollowing(new Set((f.data ?? []).map((x: any) => x.following_id)));
+        setRequested(new Set((r.data ?? []).map((x: any) => x.target_id)));
+      }
     });
   }, [navigate]);
 
@@ -43,8 +67,8 @@ function SearchPage() {
       setLoading(true);
       const { data } = await supabase
         .from("profiles")
-        .select("id,name,is_founder,avatar_url")
-        .ilike("name", `%${term}%`)
+        .select("id,name,email,is_founder,avatar_url,is_private")
+        .or(`name.ilike.%${term}%,email.ilike.%${term}%`)
         .limit(30);
       const rows = (data ?? []) as Row[];
       setResults(rows);
@@ -54,6 +78,44 @@ function SearchPage() {
     }, 250);
     return () => clearTimeout(t);
   }, [q]);
+
+  async function toggleFollow(row: Row) {
+    if (!me || me === row.id) return;
+    setBusy(row.id);
+    try {
+      if (following.has(row.id)) {
+        await supabase.from("follows").delete().eq("follower_id", me).eq("following_id", row.id);
+        setFollowing((s) => {
+          const n = new Set(s);
+          n.delete(row.id);
+          return n;
+        });
+      } else if (row.is_private) {
+        if (requested.has(row.id)) {
+          await supabase.from("follow_requests").delete().eq("requester_id", me).eq("target_id", row.id);
+          setRequested((s) => {
+            const n = new Set(s);
+            n.delete(row.id);
+            return n;
+          });
+        } else {
+          await supabase.from("follow_requests").insert({ requester_id: me, target_id: row.id });
+          await supabase.from("notifications").insert({
+            user_id: row.id,
+            actor_id: me,
+            type: "follow_request",
+          });
+          setRequested((s) => new Set(s).add(row.id));
+        }
+      } else {
+        await supabase.from("follows").insert({ follower_id: me, following_id: row.id });
+        await supabase.from("notifications").insert({ user_id: row.id, actor_id: me, type: "follow" });
+        setFollowing((s) => new Set(s).add(row.id));
+      }
+    } finally {
+      setBusy(null);
+    }
+  }
 
   return (
     <main className="min-h-screen pb-16" style={{ background: "var(--gradient-bg)" }}>
@@ -104,7 +166,33 @@ function SearchPage() {
                   {r.name || "Lumen friend"}
                   {r.is_founder && <FounderBadge size={12} showLabel={false} />}
                 </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  @{(r.email?.split("@")[0] || "lumen").toLowerCase()}
+                </p>
               </div>
+              {me !== r.id && (
+                <button
+                  type="button"
+                  disabled={busy === r.id}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleFollow(r);
+                  }}
+                  className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition disabled:opacity-60 ${
+                    following.has(r.id) || requested.has(r.id)
+                      ? "border border-border bg-card hover:bg-accent"
+                      : "text-primary-foreground"
+                  }`}
+                  style={
+                    following.has(r.id) || requested.has(r.id)
+                      ? undefined
+                      : { background: "var(--gradient-glow)" }
+                  }
+                >
+                  {following.has(r.id) ? "Following" : requested.has(r.id) ? "Requested" : "Follow"}
+                </button>
+              )}
             </Link>
           );
         })}
