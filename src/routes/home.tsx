@@ -314,6 +314,7 @@ function HomePage() {
               className="relative h-9 w-9 grid place-items-center rounded-full hover:bg-accent transition"
               aria-label="Notifications"
             >
+            </Link>
               <Bell size={18} />
               {unread > 0 && (
                 <span
