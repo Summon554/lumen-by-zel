@@ -310,6 +310,13 @@ function HomePage() {
               <SearchIcon size={18} />
             </Link>
             <Link
+              to="/messages"
+              className="h-9 w-9 grid place-items-center rounded-full hover:bg-accent transition"
+              aria-label="Messages"
+            >
+              <MessageCircle size={18} />
+            </Link>
+            <Link
               to="/notifications"
               className="relative h-9 w-9 grid place-items-center rounded-full hover:bg-accent transition"
               aria-label="Notifications"
