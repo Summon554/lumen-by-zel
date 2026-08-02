@@ -1,8 +1,16 @@
-import { useMemo, useState } from "react";
-import { Heart, Send } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { FounderBadge } from "@/components/FounderBadge";
+import { ReactionBar } from "@/components/ReactionBar";
+import {
+  applyReaction,
+  buildReactionState,
+  emptyReactionState,
+  type ReactionState,
+  type ReactionType,
+} from "@/lib/reactions";
 
 export type ThreadComment = {
   id: string;
@@ -44,6 +52,46 @@ export function CommentThread({
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [reactions, setReactions] = useState<Record<string, ReactionState>>({});
+
+  const commentIdsKey = comments.map((c) => c.id).join(",");
+  useEffect(() => {
+    const ids = commentIdsKey ? commentIdsKey.split(",") : [];
+    if (ids.length === 0) {
+      setReactions({});
+      return;
+    }
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("comment_reactions")
+        .select("comment_id,user_id,type")
+        .in("comment_id", ids);
+      const grouped: Record<string, { user_id: string; type: string }[]> = {};
+      (data ?? []).forEach((r: any) => {
+        (grouped[r.comment_id] ||= []).push({ user_id: r.user_id, type: r.type });
+      });
+      const next: Record<string, ReactionState> = {};
+      ids.forEach((id) => (next[id] = buildReactionState(grouped[id] ?? [], meId)));
+      setReactions(next);
+    })();
+  }, [commentIdsKey, meId]);
+
+  async function reactToComment(c: ThreadComment, type: ReactionType | null) {
+    if (!meId) return;
+    const cur = reactions[c.id] ?? emptyReactionState();
+    setReactions((prev) => ({ ...prev, [c.id]: applyReaction(cur, type) }));
+    if (type === null) {
+      await (supabase as any).from("comment_reactions").delete().eq("comment_id", c.id).eq("user_id", meId);
+      return;
+    }
+    const { error } = await (supabase as any)
+      .from("comment_reactions")
+      .upsert({ comment_id: c.id, user_id: meId, type }, { onConflict: "user_id,comment_id" });
+    if (error) {
+      setReactions((prev) => ({ ...prev, [c.id]: cur }));
+      toast.error(error.message);
+    }
+  }
 
   const { roots, childrenOf } = useMemo(() => {
     const roots: ThreadComment[] = [];
@@ -77,44 +125,12 @@ export function CommentThread({
     }
   }
 
-  async function toggleLike(c: ThreadComment) {
-    if (!meId) return;
-    const cur = likes[c.id] ?? { count: 0, likedByMe: false };
-    const willLike = !cur.likedByMe;
-    onLocalLikeChange(c.id, {
-      count: willLike ? cur.count + 1 : Math.max(0, cur.count - 1),
-      likedByMe: willLike,
-    });
-    if (willLike) {
-      const { error } = await (supabase as any)
-        .from("comment_likes")
-        .insert({ comment_id: c.id, user_id: meId });
-      if (error) {
-        onLocalLikeChange(c.id, cur);
-        toast.error(error.message);
-        return;
-      }
-      if (c.user_id !== meId) {
-        await (supabase as any).from("notifications").insert({
-          user_id: c.user_id,
-          actor_id: meId,
-          type: "comment_like",
-          post_id: c.post_id,
-        });
-      }
-    } else {
-      await (supabase as any)
-        .from("comment_likes")
-        .delete()
-        .eq("comment_id", c.id)
-        .eq("user_id", meId);
-    }
-  }
-
   function CommentRow({ c, indented }: { c: ThreadComment; indented?: boolean }) {
     const p = profiles[c.user_id];
     const av = p?.avatar_url ? avatarLookup[p.avatar_url] : undefined;
-    const lk = likes[c.id] ?? { count: 0, likedByMe: false };
+    void likes;
+    void onLocalLikeChange;
+    const rx = reactions[c.id] ?? emptyReactionState();
     return (
       <div className={indented ? "flex items-start gap-2 ml-9" : "flex items-start gap-2"}>
         {av ? (
@@ -141,13 +157,7 @@ export function CommentThread({
             <p className="text-sm whitespace-pre-wrap">{c.content}</p>
           </div>
           <div className="flex items-center gap-3 pl-1 mt-1 text-[11px] text-muted-foreground">
-            <button
-              onClick={() => toggleLike(c)}
-              className="inline-flex items-center gap-1 hover:text-foreground transition"
-            >
-              <Heart size={12} className={lk.likedByMe ? "fill-primary text-primary" : ""} />
-              <span>{lk.count}</span>
-            </button>
+            <ReactionBar compact state={rx} onReact={(t) => reactToComment(c, t)} />
             {!indented && (
               <button
                 onClick={() => {
