@@ -582,6 +582,15 @@ function PostCard({
   imageUrl,
   avatarUrl,
   likeState,
+  reactionState,
+  shareCount,
+  sharedOriginal,
+  sharedOriginalAuthor,
+  sharedOriginalImage,
+  blocked,
+  onBlockedChange,
+  onReact,
+  onShare,
   comments,
   commentLikes,
   profiles,
@@ -600,6 +609,15 @@ function PostCard({
   imageUrl?: string;
   avatarUrl?: string;
   likeState: { count: number; likedByMe: boolean };
+  reactionState: ReactionState;
+  shareCount: number;
+  sharedOriginal?: PostRow;
+  sharedOriginalAuthor?: Profile;
+  sharedOriginalImage?: string;
+  blocked: boolean;
+  onBlockedChange: (blocked: boolean) => void;
+  onReact: (type: ReactionType | null) => void;
+  onShare: () => void;
   comments: CommentRow[];
   commentLikes: Record<string, CommentLikeState>;
   profiles: Record<string, Profile>;
@@ -647,12 +665,33 @@ function PostCard({
             {isFollowingAuthor ? "Following" : "Follow"}
           </button>
         )}
+        <UserActionMenu
+          meId={me}
+          targetUserId={post.user_id}
+          postId={post.id}
+          blocked={blocked}
+          onBlockedChange={onBlockedChange}
+        />
       </header>
       {imageUrl && <img src={imageUrl} alt="" className="w-full max-h-[520px] object-cover" />}
       {post.caption && (
         <p className="px-4 pt-3 text-sm text-foreground whitespace-pre-wrap">{post.caption}</p>
       )}
+      {sharedOriginal && (
+        <div className="mx-4 mt-3 rounded-xl border border-border bg-background/60 overflow-hidden">
+          <p className="px-3 pt-2 text-xs text-muted-foreground">
+            Originally posted by {sharedOriginalAuthor?.name || "a Lumen friend"}
+          </p>
+          {sharedOriginalImage && (
+            <img src={sharedOriginalImage} alt="" className="w-full max-h-[360px] object-cover mt-2" />
+          )}
+          {sharedOriginal.caption && (
+            <p className="px-3 py-2 text-sm whitespace-pre-wrap">{sharedOriginal.caption}</p>
+          )}
+        </div>
+      )}
       <div className="px-4 py-3 flex items-center gap-4 text-sm">
+        <ReactionBar state={reactionState} onReact={onReact} />
         <button onClick={onLike} className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition">
           <Heart size={18} className={likeState.likedByMe ? "fill-primary text-primary" : ""} />
           <span>{likeState.count}</span>
@@ -660,6 +699,14 @@ function PostCard({
         <button onClick={onToggleOpen} className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition">
           <MessageCircle size={18} />
           <span>{comments.length}</span>
+        </button>
+        <button
+          onClick={onShare}
+          className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition"
+          aria-label="Share post"
+        >
+          <Share2 size={18} />
+          <span>{shareCount}</span>
         </button>
       </div>
       {open && (
