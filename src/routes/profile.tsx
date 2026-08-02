@@ -348,6 +348,8 @@ function ProfilePage() {
                   <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition peer-checked:translate-x-5" />
                 </label>
               </div>
+
+              {userId && <NotificationSettings userId={userId} />}
             </>
           ) : (
             <div className="w-full max-w-sm space-y-3 text-left">
