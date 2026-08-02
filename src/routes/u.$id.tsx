@@ -5,6 +5,10 @@ import { toast } from "sonner";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { getSignedUrl, getSignedUrls } from "@/lib/storage";
 import { FounderBadge } from "@/components/FounderBadge";
+import { UserActionMenu } from "@/components/UserActionMenu";
+import { PresenceDot } from "@/components/PresenceDot";
+import { isOnline, lastSeenLabel } from "@/lib/presence";
+import { MessageCircle } from "lucide-react";
 
 export const Route = createFileRoute("/u/$id")({
   ssr: false,
@@ -20,7 +24,15 @@ export const Route = createFileRoute("/u/$id")({
 });
 
 type Post = { id: string; image_url: string | null; caption: string | null; created_at: string };
-type Profile = { id: string; name: string | null; bio: string | null; is_founder: boolean | null; avatar_url: string | null; is_private?: boolean | null };
+type Profile = {
+  id: string;
+  name: string | null;
+  bio: string | null;
+  is_founder: boolean | null;
+  avatar_url: string | null;
+  is_private?: boolean | null;
+  last_seen_at?: string | null;
+};
 
 function UserProfilePage() {
   const { id } = useParams({ from: "/u/$id" });
@@ -36,6 +48,7 @@ function UserProfilePage() {
   const [requestPending, setRequestPending] = useState(false);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [blocked, setBlocked] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -49,14 +62,16 @@ function UserProfilePage() {
         return;
       }
       setMeId(auth.user.id);
-      const [{ data: prof }, { data: postRows }, followersRes, followingRes, meFollowsRes, meReqRes] = await Promise.all([
-        supabase.from("profiles").select("id,name,bio,is_founder,avatar_url,is_private").eq("id", id).maybeSingle(),
+      const [{ data: prof }, { data: postRows }, followersRes, followingRes, meFollowsRes, meReqRes, blockRes] = await Promise.all([
+        supabase.from("profiles").select("id,name,bio,is_founder,avatar_url,is_private,last_seen_at").eq("id", id).maybeSingle(),
         supabase.from("posts").select("id,image_url,caption,created_at").eq("user_id", id).order("created_at", { ascending: false }).limit(9),
         (supabase as any).from("follows").select("*", { count: "exact", head: true }).eq("following_id", id),
         (supabase as any).from("follows").select("*", { count: "exact", head: true }).eq("follower_id", id),
         (supabase as any).from("follows").select("id").eq("follower_id", auth.user.id).eq("following_id", id).maybeSingle(),
         (supabase as any).from("follow_requests").select("id,status").eq("requester_id", auth.user.id).eq("target_id", id).maybeSingle(),
+        (supabase as any).from("blocks").select("id").eq("blocker_id", auth.user.id).eq("blocked_id", id).maybeSingle(),
       ]);
+      setBlocked(!!blockRes?.data);
       setProfile(prof as Profile | null);
       if (prof?.avatar_url) setAvatarUrl(await getSignedUrl(prof.avatar_url));
       const list = (postRows ?? []) as Post[];
@@ -147,21 +162,24 @@ function UserProfilePage() {
             <Sparkles size={16} className="text-primary" />
             <span className="text-base font-semibold tracking-tight">Profile</span>
           </div>
-          <span className="w-10" />
+          <UserActionMenu meId={meId} targetUserId={id} blocked={blocked} onBlockedChange={setBlocked} />
         </div>
       </header>
 
       <section className="max-w-lg mx-auto px-4 pt-8">
         <div className="flex flex-col items-center text-center gap-4">
-          <div
-            className="h-28 w-28 rounded-full overflow-hidden grid place-items-center text-primary-foreground text-4xl font-medium"
-            style={{ background: "var(--gradient-glow)", boxShadow: "var(--shadow-glow)" }}
-          >
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
-            ) : (
-              (profile.name || "L").trim().charAt(0).toUpperCase()
-            )}
+          <div className="relative">
+            <div
+              className="h-28 w-28 rounded-full overflow-hidden grid place-items-center text-primary-foreground text-4xl font-medium"
+              style={{ background: "var(--gradient-glow)", boxShadow: "var(--shadow-glow)" }}
+            >
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+              ) : (
+                (profile.name || "L").trim().charAt(0).toUpperCase()
+              )}
+            </div>
+            <PresenceDot online={isOnline(profile.last_seen_at)} />
           </div>
 
           <div>
@@ -170,6 +188,11 @@ function UserProfilePage() {
               {profile.is_founder && <FounderBadge />}
             </h1>
             {profile.bio && <p className="text-sm text-muted-foreground mt-1 max-w-xs">{profile.bio}</p>}
+            <p className="text-xs mt-1" style={{ color: isOnline(profile.last_seen_at) ? "#16a34a" : undefined }}>
+              <span className={isOnline(profile.last_seen_at) ? "" : "text-muted-foreground"}>
+                {lastSeenLabel(profile.last_seen_at)}
+              </span>
+            </p>
           </div>
 
           <div className="flex items-center gap-6 text-sm">
@@ -187,24 +210,40 @@ function UserProfilePage() {
             </div>
           </div>
 
-          <button
-            onClick={toggleFollow}
-            disabled={busy}
-            className="rounded-full px-6 py-2 text-sm font-medium disabled:opacity-60 transition"
-            style={
-              isFollowing || requestPending
-                ? { border: "1px solid var(--color-border)", background: "hsl(0 0% 100% / 0.6)" }
-                : { background: "var(--gradient-glow)", boxShadow: "var(--shadow-glow)", color: "var(--color-primary-foreground)" }
-            }
-          >
-            {isFollowing
-              ? "Following"
-              : requestPending
-              ? "Requested"
-              : profile.is_private
-              ? "Request to Follow"
-              : "Follow"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleFollow}
+              disabled={busy || blocked}
+              className="rounded-full px-6 py-2 text-sm font-medium disabled:opacity-60 transition"
+              style={
+                isFollowing || requestPending
+                  ? { border: "1px solid var(--color-border)", background: "hsl(0 0% 100% / 0.6)" }
+                  : { background: "var(--gradient-glow)", boxShadow: "var(--shadow-glow)", color: "var(--color-primary-foreground)" }
+              }
+            >
+              {isFollowing
+                ? "Following"
+                : requestPending
+                ? "Requested"
+                : profile.is_private
+                ? "Request to Follow"
+                : "Follow"}
+            </button>
+            {!blocked && (
+              <Link
+                to="/messages/$id"
+                params={{ id: profile.id }}
+                className="inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-medium border border-border bg-card hover:bg-accent transition"
+              >
+                <MessageCircle size={15} /> Message
+              </Link>
+            )}
+          </div>
+          {blocked && (
+            <p className="text-xs text-muted-foreground">
+              You blocked this person. They can't message, comment on your posts, or follow you.
+            </p>
+          )}
         </div>
       </section>
 
