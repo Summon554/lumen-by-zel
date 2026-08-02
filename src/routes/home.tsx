@@ -11,10 +11,20 @@ import {
   LogOut,
   Bell,
   Search as SearchIcon,
+  Share2,
 } from "lucide-react";
 import { getSignedUrls, uploadUserFile } from "@/lib/storage";
 import { FounderBadge } from "@/components/FounderBadge";
 import { CommentThread, type ThreadComment, type CommentLikeState } from "@/components/CommentThread";
+import { ReactionBar } from "@/components/ReactionBar";
+import { UserActionMenu } from "@/components/UserActionMenu";
+import {
+  applyReaction,
+  buildReactionState,
+  emptyReactionState,
+  type ReactionState,
+  type ReactionType,
+} from "@/lib/reactions";
 
 export const Route = createFileRoute("/home")({
   ssr: false,
@@ -38,6 +48,7 @@ type PostRow = {
   caption: string | null;
   image_url: string | null;
   created_at: string;
+  shared_post_id?: string | null;
 };
 type CommentRow = ThreadComment;
 
@@ -58,6 +69,9 @@ function HomePage() {
   const [tab, setTab] = useState<"forYou" | "following">("forYou");
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
   const [unread, setUnread] = useState(0);
+  const [reactions, setReactions] = useState<Record<string, ReactionState>>({});
+  const [shareCounts, setShareCounts] = useState<Record<string, number>>({});
+  const [blockedIds, setBlockedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     (async () => {
@@ -67,7 +81,12 @@ function HomePage() {
         return;
       }
       setUserId(data.user.id);
-      await Promise.all([refresh(data.user.id), loadFollowing(data.user.id), loadUnread(data.user.id)]);
+      await Promise.all([
+        refresh(data.user.id),
+        loadFollowing(data.user.id),
+        loadUnread(data.user.id),
+        loadBlocks(data.user.id),
+      ]);
       setLoading(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -88,6 +107,13 @@ function HomePage() {
       .eq("user_id", uid)
       .eq("read", false);
     setUnread(count ?? 0);
+  }
+
+  async function loadBlocks(uid: string) {
+    const { data } = await (supabase as any).from("blocks").select("blocker_id,blocked_id");
+    const set = new Set<string>();
+    (data ?? []).forEach((b: any) => set.add(b.blocker_id === uid ? b.blocked_id : b.blocker_id));
+    setBlockedIds(set);
   }
 
   async function refresh(uid: string) {
@@ -118,6 +144,24 @@ function HomePage() {
 
     const postIds = list.map((p) => p.id);
     if (postIds.length) {
+      const { data: reactionRows } = await (supabase as any)
+        .from("reactions")
+        .select("post_id,user_id,type")
+        .in("post_id", postIds);
+      const grouped: Record<string, { user_id: string; type: string }[]> = {};
+      (reactionRows ?? []).forEach((r: any) => {
+        (grouped[r.post_id] ||= []).push({ user_id: r.user_id, type: r.type });
+      });
+      const rmap: Record<string, ReactionState> = {};
+      postIds.forEach((id) => (rmap[id] = buildReactionState(grouped[id] ?? [], uid)));
+      setReactions(rmap);
+
+      const shares: Record<string, number> = {};
+      list.forEach((p) => {
+        if (p.shared_post_id) shares[p.shared_post_id] = (shares[p.shared_post_id] ?? 0) + 1;
+      });
+      setShareCounts(shares);
+
       const { data: likeRows } = await supabase
         .from("likes")
         .select("post_id,user_id")
@@ -260,6 +304,58 @@ function HomePage() {
     }
   }
 
+  async function react(post: PostRow, type: ReactionType | null) {
+    if (!userId) return;
+    const cur = reactions[post.id] ?? emptyReactionState();
+    setReactions((prev) => ({ ...prev, [post.id]: applyReaction(cur, type) }));
+    if (type === null) {
+      await (supabase as any).from("reactions").delete().eq("post_id", post.id).eq("user_id", userId);
+      return;
+    }
+    const { error } = await (supabase as any)
+      .from("reactions")
+      .upsert({ post_id: post.id, user_id: userId, type }, { onConflict: "user_id,post_id" });
+    if (error) {
+      setReactions((prev) => ({ ...prev, [post.id]: cur }));
+      toast.error(error.message);
+      return;
+    }
+    if (post.user_id !== userId) {
+      await (supabase as any).from("notifications").insert({
+        user_id: post.user_id,
+        actor_id: userId,
+        type: "reaction",
+        post_id: post.id,
+      });
+    }
+  }
+
+  async function sharePost(post: PostRow) {
+    if (!userId) return;
+    const original = post.shared_post_id ? postsById[post.shared_post_id] ?? post : post;
+    const authorName = profiles[original.user_id]?.name || "a Lumen friend";
+    const { error } = await supabase.from("posts").insert({
+      user_id: userId,
+      caption: `Shared by ${profiles[userId]?.name || "me"} — originally from ${authorName}`,
+      image_url: null,
+      shared_post_id: original.id,
+    } as any);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    if (original.user_id !== userId) {
+      await (supabase as any).from("notifications").insert({
+        user_id: original.user_id,
+        actor_id: userId,
+        type: "share",
+        post_id: original.id,
+      });
+    }
+    toast.success("Shared to your feed ✨");
+    await refresh(userId);
+  }
+
   function localAddComment(postId: string, c: CommentRow) {
     setComments((prev) => ({ ...prev, [postId]: [...(prev[postId] ?? []), c] }));
     setCommentLikes((prev) => ({ ...prev, [c.id]: { count: 0, likedByMe: false } }));
@@ -274,11 +370,18 @@ function HomePage() {
   }
 
   const visiblePosts = useMemo(() => {
+    const notBlocked = posts.filter((p) => !blockedIds.has(p.user_id));
     if (tab === "following") {
-      return posts.filter((p) => followingIds.has(p.user_id) || p.user_id === userId);
+      return notBlocked.filter((p) => followingIds.has(p.user_id) || p.user_id === userId);
     }
-    return posts;
-  }, [tab, posts, followingIds, userId]);
+    return notBlocked;
+  }, [tab, posts, followingIds, userId, blockedIds]);
+
+  const postsById = useMemo(() => {
+    const map: Record<string, PostRow> = {};
+    posts.forEach((p) => (map[p.id] = p));
+    return map;
+  }, [posts]);
 
   if (loading) {
     return (
@@ -410,6 +513,30 @@ function HomePage() {
                 : undefined
             }
             likeState={likes[post.id] ?? { count: 0, likedByMe: false }}
+            reactionState={reactions[post.id] ?? emptyReactionState()}
+            shareCount={shareCounts[post.id] ?? 0}
+            sharedOriginal={post.shared_post_id ? postsById[post.shared_post_id] : undefined}
+            sharedOriginalAuthor={
+              post.shared_post_id && postsById[post.shared_post_id]
+                ? profiles[postsById[post.shared_post_id]!.user_id]
+                : undefined
+            }
+            sharedOriginalImage={
+              post.shared_post_id && postsById[post.shared_post_id]?.image_url
+                ? signedUrls[postsById[post.shared_post_id]!.image_url as string]
+                : undefined
+            }
+            blocked={blockedIds.has(post.user_id)}
+            onBlockedChange={(b) =>
+              setBlockedIds((prev) => {
+                const next = new Set(prev);
+                if (b) next.add(post.user_id);
+                else next.delete(post.user_id);
+                return next;
+              })
+            }
+            onReact={(t) => react(post, t)}
+            onShare={() => sharePost(post)}
             comments={comments[post.id] ?? []}
             commentLikes={commentLikes}
             profiles={profiles}
@@ -455,6 +582,15 @@ function PostCard({
   imageUrl,
   avatarUrl,
   likeState,
+  reactionState,
+  shareCount,
+  sharedOriginal,
+  sharedOriginalAuthor,
+  sharedOriginalImage,
+  blocked,
+  onBlockedChange,
+  onReact,
+  onShare,
   comments,
   commentLikes,
   profiles,
@@ -473,6 +609,15 @@ function PostCard({
   imageUrl?: string;
   avatarUrl?: string;
   likeState: { count: number; likedByMe: boolean };
+  reactionState: ReactionState;
+  shareCount: number;
+  sharedOriginal?: PostRow;
+  sharedOriginalAuthor?: Profile;
+  sharedOriginalImage?: string;
+  blocked: boolean;
+  onBlockedChange: (blocked: boolean) => void;
+  onReact: (type: ReactionType | null) => void;
+  onShare: () => void;
   comments: CommentRow[];
   commentLikes: Record<string, CommentLikeState>;
   profiles: Record<string, Profile>;
@@ -520,12 +665,33 @@ function PostCard({
             {isFollowingAuthor ? "Following" : "Follow"}
           </button>
         )}
+        <UserActionMenu
+          meId={me}
+          targetUserId={post.user_id}
+          postId={post.id}
+          blocked={blocked}
+          onBlockedChange={onBlockedChange}
+        />
       </header>
       {imageUrl && <img src={imageUrl} alt="" className="w-full max-h-[520px] object-cover" />}
       {post.caption && (
         <p className="px-4 pt-3 text-sm text-foreground whitespace-pre-wrap">{post.caption}</p>
       )}
+      {sharedOriginal && (
+        <div className="mx-4 mt-3 rounded-xl border border-border bg-background/60 overflow-hidden">
+          <p className="px-3 pt-2 text-xs text-muted-foreground">
+            Originally posted by {sharedOriginalAuthor?.name || "a Lumen friend"}
+          </p>
+          {sharedOriginalImage && (
+            <img src={sharedOriginalImage} alt="" className="w-full max-h-[360px] object-cover mt-2" />
+          )}
+          {sharedOriginal.caption && (
+            <p className="px-3 py-2 text-sm whitespace-pre-wrap">{sharedOriginal.caption}</p>
+          )}
+        </div>
+      )}
       <div className="px-4 py-3 flex items-center gap-4 text-sm">
+        <ReactionBar state={reactionState} onReact={onReact} />
         <button onClick={onLike} className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition">
           <Heart size={18} className={likeState.likedByMe ? "fill-primary text-primary" : ""} />
           <span>{likeState.count}</span>
@@ -533,6 +699,14 @@ function PostCard({
         <button onClick={onToggleOpen} className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition">
           <MessageCircle size={18} />
           <span>{comments.length}</span>
+        </button>
+        <button
+          onClick={onShare}
+          className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition"
+          aria-label="Share post"
+        >
+          <Share2 size={18} />
+          <span>{shareCount}</span>
         </button>
       </div>
       {open && (
