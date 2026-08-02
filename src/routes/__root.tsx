@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "sonner";
 import { UpdateBanner } from "@/components/UpdateBanner";
+import { LumenNotifier } from "@/components/LumenNotifier";
 
 function NotFoundComponent() {
   return (
@@ -141,6 +142,7 @@ function RootComponent() {
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <UpdateBanner />
+      <LumenNotifier />
       <Toaster position="top-center" richColors />
     </QueryClientProvider>
   );
