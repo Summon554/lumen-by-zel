@@ -2,7 +2,14 @@ import { supabase } from "@/integrations/supabase/client";
 
 const BUCKET = "lumen-media";
 
-export async function uploadUserFile(userId: string, file: File, folder: "avatars" | "posts" | "covers") {
+export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+
+export async function uploadUserFile(
+  userId: string,
+  file: File,
+  folder: "avatars" | "posts" | "covers" | "chat",
+) {
+  if (file.size > MAX_UPLOAD_BYTES) throw new Error("File is too large (max 10MB)");
   const ext = file.name.split(".").pop() || "jpg";
   const path = `${userId}/${folder}/${crypto.randomUUID()}.${ext}`;
   const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
