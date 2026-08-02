@@ -6,6 +6,7 @@ import { ArrowLeft, Camera, ImagePlus, Lock, Sparkles, UserCog } from "lucide-re
 import { getSignedUrl, getSignedUrls, uploadUserFile } from "@/lib/storage";
 import { isFounder } from "@/lib/founder";
 import { FounderBadge } from "@/components/FounderBadge";
+import { NotificationSettings } from "@/components/NotificationSettings";
 
 export const Route = createFileRoute("/profile")({
   ssr: false,
