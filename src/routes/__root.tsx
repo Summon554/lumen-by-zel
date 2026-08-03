@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "sonner";
 import { UpdateBanner } from "@/components/UpdateBanner";
 import { LumenNotifier } from "@/components/LumenNotifier";
+import { initTheme } from "@/lib/theme";
 
 function NotFoundComponent() {
   return (
