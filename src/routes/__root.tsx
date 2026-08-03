@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "sonner";
 import { UpdateBanner } from "@/components/UpdateBanner";
 import { LumenNotifier } from "@/components/LumenNotifier";
+import { initTheme } from "@/lib/theme";
 
 function NotFoundComponent() {
   return (
@@ -127,6 +128,9 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  useEffect(() => {
+    initTheme();
+  }, []);
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {

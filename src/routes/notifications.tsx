@@ -5,6 +5,7 @@ import { getSignedUrls } from "@/lib/storage";
 import { ArrowLeft, Bell, Heart, MessageCircle, UserPlus } from "lucide-react";
 import { isFounder } from "@/lib/founder";
 import { FounderBadge } from "@/components/FounderBadge";
+import { EmptyState } from "@/components/EmptyState";
 
 export const Route = createFileRoute("/notifications")({
   ssr: false,
@@ -94,7 +95,11 @@ function NotificationsPage() {
         {loading ? (
           <p className="text-sm text-muted-foreground text-center py-10">Loading…</p>
         ) : items.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-10">No notifications yet.</p>
+          <EmptyState
+            icon={<Bell size={22} />}
+            title="Nothing yet"
+            body="Encouragements, comments and new followers will show up here as soon as they happen."
+          />
         ) : (
           items.map((n) => {
             const actor = profiles[n.actor_id];

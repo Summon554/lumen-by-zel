@@ -8,16 +8,20 @@ import {
   Sparkles,
   User as UserIcon,
   Image as ImageIcon,
-  LogOut,
   Bell,
   Search as SearchIcon,
   Share2,
+  Feather,
 } from "lucide-react";
 import { getSignedUrls, uploadUserFile } from "@/lib/storage";
 import { FounderBadge } from "@/components/FounderBadge";
 import { CommentThread, type ThreadComment, type CommentLikeState } from "@/components/CommentThread";
 import { ReactionBar } from "@/components/ReactionBar";
 import { UserActionMenu } from "@/components/UserActionMenu";
+import { HamburgerMenu } from "@/components/HamburgerMenu";
+import { DailyVerse } from "@/components/DailyVerse";
+import { EmptyState } from "@/components/EmptyState";
+import { LumenAvatar } from "@/components/LumenAvatar";
 import {
   applyReaction,
   buildReactionState,
@@ -364,11 +368,6 @@ function HomePage() {
     setCommentLikes((prev) => ({ ...prev, [commentId]: next }));
   }
 
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    navigate({ to: "/", replace: true });
-  }
-
   const visiblePosts = useMemo(() => {
     const notBlocked = posts.filter((p) => !blockedIds.has(p.user_id));
     if (tab === "following") {
@@ -395,15 +394,18 @@ function HomePage() {
     <main className="min-h-screen pb-16" style={{ background: "var(--gradient-bg)" }}>
       <header className="sticky top-0 z-20 backdrop-blur bg-background/60 border-b border-border">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
-          <Link to="/home" className="flex items-center gap-2">
-            <div
-              className="h-8 w-8 rounded-full grid place-items-center text-primary-foreground"
-              style={{ background: "var(--gradient-glow)", boxShadow: "var(--shadow-glow)" }}
-            >
-              <Sparkles size={16} />
-            </div>
-            <span className="text-base font-semibold tracking-tight">Lumen</span>
-          </Link>
+          <div className="flex items-center gap-1">
+            <HamburgerMenu />
+            <Link to="/home" className="flex items-center gap-2">
+              <div
+                className="h-8 w-8 rounded-full grid place-items-center text-primary-foreground"
+                style={{ background: "var(--gradient-glow)", boxShadow: "var(--shadow-glow)" }}
+              >
+                <Sparkles size={16} />
+              </div>
+              <span className="text-base font-semibold tracking-tight">Lumen</span>
+            </Link>
+          </div>
           <div className="flex items-center gap-1">
             <Link
               to="/search"
@@ -441,13 +443,6 @@ function HomePage() {
             >
               <UserIcon size={18} />
             </Link>
-            <button
-              onClick={handleLogout}
-              className="h-9 w-9 grid place-items-center rounded-full hover:bg-accent transition"
-              aria-label="Log out"
-            >
-              <LogOut size={16} />
-            </button>
           </div>
         </div>
         <div className="max-w-lg mx-auto px-4 pb-2 flex items-center gap-1">
@@ -457,6 +452,8 @@ function HomePage() {
       </header>
 
       <div className="max-w-lg mx-auto px-4 pt-5 space-y-5">
+        <DailyVerse />
+
         <form
           onSubmit={handleCreatePost}
           className="rounded-2xl border border-border bg-card/70 backdrop-blur p-4 space-y-3"
@@ -492,13 +489,29 @@ function HomePage() {
           </div>
         </form>
 
-        {visiblePosts.length === 0 && (
-          <div className="rounded-2xl border border-border bg-card/60 p-8 text-center text-sm text-muted-foreground">
-            {tab === "following"
-              ? "Follow people to see their posts here."
-              : "No posts yet. Be the first to glow."}
-          </div>
-        )}
+        {visiblePosts.length === 0 &&
+          (tab === "following" ? (
+            <EmptyState
+              icon={<UserIcon size={22} />}
+              title="Your Following feed is quiet"
+              body="Follow a few people and their posts will glow up right here."
+              action={
+                <Link
+                  to="/search"
+                  className="inline-block rounded-full px-4 py-1.5 text-sm text-primary-foreground font-medium"
+                  style={{ background: "var(--gradient-glow)" }}
+                >
+                  Find people
+                </Link>
+              }
+            />
+          ) : (
+            <EmptyState
+              icon={<Feather size={22} />}
+              title="No posts yet"
+              body="Be the first to glow. Share a photo or an encouraging thought above."
+            />
+          ))}
 
         {visiblePosts.map((post) => (
           <PostCard
@@ -641,7 +654,7 @@ function PostCard({
     <article className="rounded-2xl border border-border bg-card/70 backdrop-blur overflow-hidden">
       <header className="flex items-center gap-3 px-4 py-3">
         <Link to="/u/$id" params={{ id: post.user_id }}>
-          <Avatar name={author?.name} url={avatarUrl} size={36} />
+          <LumenAvatar name={author?.name} url={avatarUrl} size={48} />
         </Link>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium truncate flex items-center gap-1.5">
@@ -692,8 +705,15 @@ function PostCard({
       )}
       <div className="px-4 py-3 flex items-center gap-4 text-sm">
         <ReactionBar state={reactionState} onReact={onReact} />
-        <button onClick={onLike} className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition">
+        <button
+          onClick={onLike}
+          aria-label="Encourage this post"
+          className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition"
+        >
           <Heart size={18} className={likeState.likedByMe ? "fill-primary text-primary" : ""} />
+          <span className={likeState.likedByMe ? "text-primary font-medium" : ""}>
+            {likeState.likedByMe ? "Encouraged" : "Encourage"}
+          </span>
           <span>{likeState.count}</span>
         </button>
         <button onClick={onToggleOpen} className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition">
@@ -725,24 +745,5 @@ function PostCard({
         </div>
       )}
     </article>
-  );
-}
-
-function Avatar({ name, url, size = 36 }: { name?: string | null; url?: string; size?: number }) {
-  const initials = (name || "L").trim().charAt(0).toUpperCase();
-  return url ? (
-    <img src={url} alt="" className="rounded-full object-cover" style={{ width: size, height: size }} />
-  ) : (
-    <div
-      className="rounded-full grid place-items-center text-primary-foreground font-medium"
-      style={{
-        width: size,
-        height: size,
-        background: "var(--gradient-glow)",
-        fontSize: size * 0.4,
-      }}
-    >
-      {initials}
-    </div>
   );
 }
