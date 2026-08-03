@@ -747,22 +747,3 @@ function PostCard({
     </article>
   );
 }
-
-function Avatar({ name, url, size = 36 }: { name?: string | null; url?: string; size?: number }) {
-  const initials = (name || "L").trim().charAt(0).toUpperCase();
-  return url ? (
-    <img src={url} alt="" className="rounded-full object-cover" style={{ width: size, height: size }} />
-  ) : (
-    <div
-      className="rounded-full grid place-items-center text-primary-foreground font-medium"
-      style={{
-        width: size,
-        height: size,
-        background: "var(--gradient-glow)",
-        fontSize: size * 0.4,
-      }}
-    >
-      {initials}
-    </div>
-  );
-}
