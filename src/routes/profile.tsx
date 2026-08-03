@@ -209,7 +209,7 @@ function ProfilePage() {
             <Sparkles size={16} className="text-primary" />
             <span className="text-base font-semibold tracking-tight">Profile</span>
           </div>
-          <span className="w-10" />
+          <HamburgerMenu />
         </div>
       </header>
 
@@ -310,56 +310,9 @@ function ProfilePage() {
               >
                 Edit Profile
               </button>
-
-              <div className="w-full max-w-sm rounded-2xl border border-border bg-card/70 backdrop-blur p-4 flex items-center gap-3 text-left">
-                <div className="h-9 w-9 rounded-full grid place-items-center bg-background/70 border border-border">
-                  <UserCog size={16} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">Account Type</p>
-                  <p className="text-xs text-muted-foreground">Changes what counts show on your header.</p>
-                </div>
-                <div className="flex rounded-full border border-border overflow-hidden text-xs">
-                  {(["personal", "professional"] as const).map((t) => (
-                    <button
-                      key={t}
-                      disabled={savingType}
-                      onClick={() => changeAccountType(t)}
-                      className={`px-3 py-1.5 transition ${accountType === t ? "text-primary-foreground" : "hover:bg-accent"}`}
-                      style={accountType === t ? { background: "var(--gradient-glow)" } : undefined}
-                    >
-                      {t === "personal" ? "Personal" : "Pro"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="w-full max-w-sm mt-2 rounded-2xl border border-border bg-card/70 backdrop-blur p-4 flex items-center gap-3 text-left">
-                <div className="h-9 w-9 rounded-full grid place-items-center bg-background/70 border border-border">
-                  <Lock size={16} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">Private Account</p>
-                  <p className="text-xs text-muted-foreground">
-                    When on, others must send a follow request.
-                  </p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={isPrivate}
-                    disabled={savingPrivacy}
-                    onChange={(e) => togglePrivacy(e.target.checked)}
-                  />
-                  <span
-                    className="w-11 h-6 rounded-full bg-muted peer-checked:[background:var(--gradient-glow)] transition"
-                  />
-                  <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition peer-checked:translate-x-5" />
-                </label>
-              </div>
-
-              {userId && <NotificationSettings userId={userId} />}
+              {isPrivate && (
+                <p className="text-xs text-muted-foreground">🔒 Private account — manage in the ☰ menu</p>
+              )}
             </>
           ) : (
             <div className="w-full max-w-sm space-y-3 text-left">
