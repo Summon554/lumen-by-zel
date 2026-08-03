@@ -27,10 +27,21 @@ type Row = {
   is_private: boolean | null;
 };
 
+type PostRow = {
+  id: string;
+  user_id: string;
+  caption: string | null;
+  image_url: string | null;
+  created_at: string;
+};
+
 function SearchPage() {
   const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [results, setResults] = useState<Row[]>([]);
+  const [postResults, setPostResults] = useState<PostRow[]>([]);
+  const [postImages, setPostImages] = useState<Record<string, string>>({});
+  const [scope, setScope] = useState<"people" | "posts">("people");
   const [avatars, setAvatars] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [me, setMe] = useState<string | null>(null);
@@ -65,13 +76,24 @@ function SearchPage() {
         return;
       }
       setLoading(true);
-      const { data } = await supabase
-        .from("profiles")
-        .select("id,name,email,is_founder,avatar_url,is_private")
-        .or(`name.ilike.%${term}%,email.ilike.%${term}%`)
-        .limit(30);
+      const [{ data }, { data: postData }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id,name,email,is_founder,avatar_url,is_private")
+          .or(`name.ilike.%${term}%,email.ilike.%${term}%`)
+          .limit(30),
+        supabase
+          .from("posts")
+          .select("id,user_id,caption,image_url,created_at")
+          .ilike("caption", `%${term.replace(/^#/, "")}%`)
+          .order("created_at", { ascending: false })
+          .limit(30),
+      ]);
       const rows = (data ?? []) as Row[];
       setResults(rows);
+      const posts = (postData ?? []) as PostRow[];
+      setPostResults(posts);
+      setPostImages(await getSignedUrls(posts.map((p) => p.image_url).filter(Boolean) as string[]));
       const paths = rows.map((r) => r.avatar_url).filter(Boolean) as string[];
       setAvatars(await getSignedUrls(paths));
       setLoading(false);
@@ -130,19 +152,57 @@ function SearchPage() {
               autoFocus
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search people by name"
+              placeholder="Search people, posts or #hashtags"
               className="w-full rounded-full border border-border bg-card pl-9 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
+        </div>
+        <div className="max-w-lg mx-auto px-4 pb-2 flex items-center gap-2">
+          {(["people", "posts"] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => setScope(s)}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                scope === s ? "text-primary-foreground" : "border border-border bg-card hover:bg-accent"
+              }`}
+              style={scope === s ? { background: "var(--gradient-glow)" } : undefined}
+            >
+              {s === "people" ? "People" : "Posts"}
+              {s === "people" ? ` ${results.length || ""}` : ` ${postResults.length || ""}`}
+            </button>
+          ))}
         </div>
       </header>
 
       <section className="max-w-lg mx-auto px-4 pt-4 space-y-2">
         {loading && <p className="text-sm text-muted-foreground text-center py-8">Searching…</p>}
-        {!loading && q && results.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-8">No people found.</p>
+        {!loading && q && (scope === "people" ? results : postResults).length === 0 && (
+          <p className="text-sm text-muted-foreground text-center py-8">
+            {scope === "people" ? "No people found." : "No posts found."}
+          </p>
         )}
-        {results.map((r) => {
+        {scope === "posts" &&
+          postResults.map((p) => {
+            const img = p.image_url ? postImages[p.image_url] : undefined;
+            return (
+              <Link
+                key={p.id}
+                to="/u/$id"
+                params={{ id: p.user_id }}
+                className="flex items-center gap-3 rounded-2xl border border-border bg-card/70 backdrop-blur p-3 hover:bg-accent transition"
+              >
+                {img ? (
+                  <img src={img} alt="" className="h-14 w-14 rounded-xl object-cover shrink-0" />
+                ) : (
+                  <div className="h-14 w-14 rounded-xl grid place-items-center bg-background/70 border border-border shrink-0">
+                    <SearchIcon size={16} className="text-muted-foreground" />
+                  </div>
+                )}
+                <p className="text-sm text-muted-foreground line-clamp-3">{p.caption ?? "Photo post"}</p>
+              </Link>
+            );
+          })}
+        {scope === "people" && results.map((r) => {
           const av = r.avatar_url ? avatars[r.avatar_url] : undefined;
           return (
             <Link
