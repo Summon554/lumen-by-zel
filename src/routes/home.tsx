@@ -394,15 +394,18 @@ function HomePage() {
     <main className="min-h-screen pb-16" style={{ background: "var(--gradient-bg)" }}>
       <header className="sticky top-0 z-20 backdrop-blur bg-background/60 border-b border-border">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
-          <Link to="/home" className="flex items-center gap-2">
-            <div
-              className="h-8 w-8 rounded-full grid place-items-center text-primary-foreground"
-              style={{ background: "var(--gradient-glow)", boxShadow: "var(--shadow-glow)" }}
-            >
-              <Sparkles size={16} />
-            </div>
-            <span className="text-base font-semibold tracking-tight">Lumen</span>
-          </Link>
+          <div className="flex items-center gap-1">
+            <HamburgerMenu />
+            <Link to="/home" className="flex items-center gap-2">
+              <div
+                className="h-8 w-8 rounded-full grid place-items-center text-primary-foreground"
+                style={{ background: "var(--gradient-glow)", boxShadow: "var(--shadow-glow)" }}
+              >
+                <Sparkles size={16} />
+              </div>
+              <span className="text-base font-semibold tracking-tight">Lumen</span>
+            </Link>
+          </div>
           <div className="flex items-center gap-1">
             <Link
               to="/search"
@@ -440,13 +443,6 @@ function HomePage() {
             >
               <UserIcon size={18} />
             </Link>
-            <button
-              onClick={handleLogout}
-              className="h-9 w-9 grid place-items-center rounded-full hover:bg-accent transition"
-              aria-label="Log out"
-            >
-              <LogOut size={16} />
-            </button>
           </div>
         </div>
         <div className="max-w-lg mx-auto px-4 pb-2 flex items-center gap-1">
@@ -456,6 +452,8 @@ function HomePage() {
       </header>
 
       <div className="max-w-lg mx-auto px-4 pt-5 space-y-5">
+        <DailyVerse />
+
         <form
           onSubmit={handleCreatePost}
           className="rounded-2xl border border-border bg-card/70 backdrop-blur p-4 space-y-3"
@@ -491,13 +489,29 @@ function HomePage() {
           </div>
         </form>
 
-        {visiblePosts.length === 0 && (
-          <div className="rounded-2xl border border-border bg-card/60 p-8 text-center text-sm text-muted-foreground">
-            {tab === "following"
-              ? "Follow people to see their posts here."
-              : "No posts yet. Be the first to glow."}
-          </div>
-        )}
+        {visiblePosts.length === 0 &&
+          (tab === "following" ? (
+            <EmptyState
+              icon={<UserIcon size={22} />}
+              title="Your Following feed is quiet"
+              body="Follow a few people and their posts will glow up right here."
+              action={
+                <Link
+                  to="/search"
+                  className="inline-block rounded-full px-4 py-1.5 text-sm text-primary-foreground font-medium"
+                  style={{ background: "var(--gradient-glow)" }}
+                >
+                  Find people
+                </Link>
+              }
+            />
+          ) : (
+            <EmptyState
+              icon={<Feather size={22} />}
+              title="No posts yet"
+              body="Be the first to glow. Share a photo or an encouraging thought above."
+            />
+          ))}
 
         {visiblePosts.map((post) => (
           <PostCard
