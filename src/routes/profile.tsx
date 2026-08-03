@@ -2,11 +2,11 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Camera, ImagePlus, Lock, Sparkles, UserCog } from "lucide-react";
+import { ArrowLeft, Camera, ImagePlus, Sparkles } from "lucide-react";
 import { getSignedUrl, getSignedUrls, uploadUserFile } from "@/lib/storage";
 import { isFounder } from "@/lib/founder";
 import { FounderBadge } from "@/components/FounderBadge";
-import { NotificationSettings } from "@/components/NotificationSettings";
+import { HamburgerMenu } from "@/components/HamburgerMenu";
 
 export const Route = createFileRoute("/profile")({
   ssr: false,
@@ -24,6 +24,7 @@ export const Route = createFileRoute("/profile")({
 });
 
 type Post = { id: string; image_url: string | null; caption: string | null; created_at: string };
+type ProfileTab = "posts" | "media" | "likes" | "encouragements";
 
 function Count({ label, value, onClick }: { label: string; value: number; onClick?: () => void }) {
   return (
@@ -56,11 +57,50 @@ function ProfilePage() {
   const [followers, setFollowers] = useState(0);
   const [following, setFollowing] = useState(0);
   const [isPrivate, setIsPrivate] = useState(false);
-  const [savingPrivacy, setSavingPrivacy] = useState(false);
   const [friends, setFriends] = useState(0);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [accountType, setAccountType] = useState<"personal" | "professional">("personal");
-  const [savingType, setSavingType] = useState(false);
+  const [tab, setTab] = useState<ProfileTab>("posts");
+  const [tabPosts, setTabPosts] = useState<Post[]>([]);
+  const [tabUrls, setTabUrls] = useState<Record<string, string>>({});
+  const [tabLoading, setTabLoading] = useState(false);
+
+  useEffect(() => {
+    if (!userId || tab === "posts" || tab === "media") return;
+    let cancelled = false;
+    (async () => {
+      setTabLoading(true);
+      const table = tab === "likes" ? "likes" : "reactions";
+      const { data: rows } = await (supabase as any)
+        .from(table)
+        .select("post_id")
+        .eq("user_id", userId)
+        .limit(60);
+      const ids = Array.from(new Set(((rows ?? []) as any[]).map((r) => r.post_id)));
+      if (!ids.length) {
+        if (!cancelled) {
+          setTabPosts([]);
+          setTabUrls({});
+          setTabLoading(false);
+        }
+        return;
+      }
+      const { data: postRows } = await supabase
+        .from("posts")
+        .select("id,image_url,caption,created_at")
+        .in("id", ids)
+        .order("created_at", { ascending: false });
+      const list = (postRows ?? []) as Post[];
+      const urls = await getSignedUrls(list.map((p) => p.image_url).filter(Boolean) as string[]);
+      if (cancelled) return;
+      setTabPosts(list);
+      setTabUrls(urls);
+      setTabLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, userId]);
 
   useEffect(() => {
     (async () => {
@@ -144,37 +184,6 @@ function ProfilePage() {
       toast.success("Cover updated");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
-    }
-  }
-
-  async function changeAccountType(next: "personal" | "professional") {
-    if (!userId || next === accountType) return;
-    const prev = accountType;
-    setAccountType(next);
-    setSavingType(true);
-    const { error } = await (supabase as any).from("profiles").update({ account_type: next }).eq("id", userId);
-    setSavingType(false);
-    if (error) {
-      setAccountType(prev);
-      toast.error(error.message);
-    }
-  }
-
-  async function togglePrivacy(next: boolean) {
-    if (!userId) return;
-    setSavingPrivacy(true);
-    const prev = isPrivate;
-    setIsPrivate(next);
-    const { error } = await (supabase as any)
-      .from("profiles")
-      .update({ is_private: next })
-      .eq("id", userId);
-    setSavingPrivacy(false);
-    if (error) {
-      setIsPrivate(prev);
-      toast.error(error.message);
-    } else {
-      toast.success(next ? "Account set to private" : "Account is public");
     }
   }
 
