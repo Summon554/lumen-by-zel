@@ -357,30 +357,71 @@ function ProfilePage() {
       </section>
 
       <section className="max-w-lg mx-auto px-4 mt-8">
-        <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">Posts</h2>
-        {posts.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-10">No posts yet.</p>
-        ) : (
-          <div className="grid grid-cols-3 gap-1.5">
-            {posts.map((p) => {
-              const url = p.image_url ? postUrls[p.image_url] : null;
-              return (
-                <div
-                  key={p.id}
-                  className="aspect-square rounded-lg overflow-hidden bg-card border border-border grid place-items-center"
-                >
-                  {url ? (
-                    <img src={url} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <p className="text-[10px] text-muted-foreground p-2 text-center line-clamp-6">
-                      {p.caption ?? ""}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
+        <div className="flex items-center gap-1 border-b border-border mb-3 overflow-x-auto">
+          {(
+            [
+              ["posts", "Posts"],
+              ["media", "Media"],
+              ["likes", "Likes"],
+              ["encouragements", "Encouragements"],
+            ] as const
+          ).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className="relative px-3 py-2 text-sm font-medium whitespace-nowrap transition"
+              style={{ color: tab === key ? "var(--color-foreground)" : "var(--color-muted-foreground)" }}
+            >
+              {label}
+              {tab === key && (
+                <span
+                  className="absolute left-2 right-2 -bottom-px h-0.5 rounded-full"
+                  style={{ background: "var(--gradient-glow)" }}
+                />
+              )}
+            </button>
+          ))}
+        </div>
+        {(() => {
+          const source =
+            tab === "posts" ? posts : tab === "media" ? posts.filter((p) => p.image_url) : tabPosts;
+          const urls = tab === "posts" || tab === "media" ? postUrls : tabUrls;
+          if (tabLoading && tab !== "posts" && tab !== "media")
+            return <p className="text-sm text-muted-foreground text-center py-10">Loading…</p>;
+          if (source.length === 0)
+            return (
+              <p className="text-sm text-muted-foreground text-center py-10">
+                {tab === "posts"
+                  ? "No posts yet."
+                  : tab === "media"
+                    ? "No photos yet."
+                    : tab === "likes"
+                      ? "You haven't liked any posts yet."
+                      : "No encouragements given yet."}
+              </p>
+            );
+          return (
+            <div className="grid grid-cols-3 gap-1.5">
+              {source.map((p) => {
+                const url = p.image_url ? urls[p.image_url] : null;
+                return (
+                  <div
+                    key={p.id}
+                    className="aspect-square rounded-lg overflow-hidden bg-card border border-border grid place-items-center"
+                  >
+                    {url ? (
+                      <img src={url} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <p className="text-[10px] text-muted-foreground p-2 text-center line-clamp-6">
+                        {p.caption ?? ""}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </section>
     </main>
   );
