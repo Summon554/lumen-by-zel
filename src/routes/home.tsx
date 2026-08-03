@@ -8,16 +8,20 @@ import {
   Sparkles,
   User as UserIcon,
   Image as ImageIcon,
-  LogOut,
   Bell,
   Search as SearchIcon,
   Share2,
+  Feather,
 } from "lucide-react";
 import { getSignedUrls, uploadUserFile } from "@/lib/storage";
 import { FounderBadge } from "@/components/FounderBadge";
 import { CommentThread, type ThreadComment, type CommentLikeState } from "@/components/CommentThread";
 import { ReactionBar } from "@/components/ReactionBar";
 import { UserActionMenu } from "@/components/UserActionMenu";
+import { HamburgerMenu } from "@/components/HamburgerMenu";
+import { DailyVerse } from "@/components/DailyVerse";
+import { EmptyState } from "@/components/EmptyState";
+import { LumenAvatar } from "@/components/LumenAvatar";
 import {
   applyReaction,
   buildReactionState,
@@ -362,11 +366,6 @@ function HomePage() {
   }
   function localChangeCommentLike(commentId: string, next: CommentLikeState) {
     setCommentLikes((prev) => ({ ...prev, [commentId]: next }));
-  }
-
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    navigate({ to: "/", replace: true });
   }
 
   const visiblePosts = useMemo(() => {
