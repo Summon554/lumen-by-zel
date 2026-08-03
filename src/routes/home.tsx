@@ -654,7 +654,7 @@ function PostCard({
     <article className="rounded-2xl border border-border bg-card/70 backdrop-blur overflow-hidden">
       <header className="flex items-center gap-3 px-4 py-3">
         <Link to="/u/$id" params={{ id: post.user_id }}>
-          <Avatar name={author?.name} url={avatarUrl} size={36} />
+          <LumenAvatar name={author?.name} url={avatarUrl} size={48} />
         </Link>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium truncate flex items-center gap-1.5">
@@ -705,8 +705,15 @@ function PostCard({
       )}
       <div className="px-4 py-3 flex items-center gap-4 text-sm">
         <ReactionBar state={reactionState} onReact={onReact} />
-        <button onClick={onLike} className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition">
+        <button
+          onClick={onLike}
+          aria-label="Encourage this post"
+          className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition"
+        >
           <Heart size={18} className={likeState.likedByMe ? "fill-primary text-primary" : ""} />
+          <span className={likeState.likedByMe ? "text-primary font-medium" : ""}>
+            {likeState.likedByMe ? "Encouraged" : "Encourage"}
+          </span>
           <span>{likeState.count}</span>
         </button>
         <button onClick={onToggleOpen} className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition">
