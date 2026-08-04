@@ -394,8 +394,12 @@ function HomePage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen grid place-items-center" style={{ background: "var(--gradient-bg)" }}>
-        <div className="h-10 w-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+      <main className="min-h-screen pb-16" style={{ background: "var(--gradient-bg)" }}>
+        <div className="max-w-lg mx-auto px-4 pt-6 space-y-5">
+          <PostSkeleton />
+          <PostSkeleton />
+          <PostSkeleton />
+        </div>
       </main>
     );
   }
