@@ -714,7 +714,22 @@ function PostCard({
           onBlockedChange={onBlockedChange}
         />
       </header>
-      {imageUrl && <img src={imageUrl} alt="" className="w-full max-h-[520px] object-cover" />}
+      {imageUrl &&
+        (isVideoPath(post.image_url) ? (
+          <div className="px-3 pb-2">
+            <LumenVideo src={imageUrl} onExpand={() => onOpenMedia({ url: imageUrl, type: "video" })} />
+          </div>
+        ) : (
+          <button type="button" className="block w-full" onClick={() => onOpenMedia({ url: imageUrl, type: "image" })}>
+            <img
+              src={imageUrl}
+              alt={post.caption ?? "Lumen post"}
+              loading="lazy"
+              decoding="async"
+              className="w-full max-h-[520px] object-cover cursor-zoom-in"
+            />
+          </button>
+        ))}
       {post.caption && (
         <p className="px-4 pt-3 text-sm text-foreground whitespace-pre-wrap">{post.caption}</p>
       )}
