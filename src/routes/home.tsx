@@ -641,6 +641,7 @@ function PostCard({
   onLocalAddComment,
   onLocalCommentLikeChange,
   onToggleFollow,
+  onOpenMedia,
 }: {
   post: PostRow;
   me: string | null;
@@ -668,6 +669,7 @@ function PostCard({
   onLocalAddComment: (c: CommentRow) => void;
   onLocalCommentLikeChange: (commentId: string, next: CommentLikeState) => void;
   onToggleFollow: () => void;
+  onOpenMedia: (m: ViewerMedia) => void;
 }) {
   const when = useMemo(
     () => new Date(post.created_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }),
