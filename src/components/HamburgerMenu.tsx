@@ -1,25 +1,31 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   Ban,
   BookMarked,
+  Bell,
   ChevronLeft,
+  ChevronRight,
+  Heart,
   Lock,
   LogOut,
   Menu,
+  MessageSquare,
   Moon,
   Music,
+  Shield,
   Sparkles,
   Sun,
   UserCog,
+  UserPlus,
   X,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { NotificationSettings } from "@/components/NotificationSettings";
 import { applyTheme, getStoredTheme, type Theme } from "@/lib/theme";
 
 type Panel = "root" | "blocked" | "story" | "note" | "music";
+type Prefs = { messages: boolean; reactions: boolean; follows: boolean };
 
 export function HamburgerMenu() {
   const navigate = useNavigate();
@@ -29,6 +35,7 @@ export function HamburgerMenu() {
   const [theme, setTheme] = useState<Theme>("light");
   const [accountType, setAccountType] = useState<"personal" | "professional">("personal");
   const [isPrivate, setIsPrivate] = useState(false);
+  const [prefs, setPrefs] = useState<Prefs>({ messages: true, reactions: true, follows: true });
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -41,13 +48,17 @@ export function HamburgerMenu() {
       const { data } = await supabase.auth.getUser();
       if (!data.user) return;
       setUserId(data.user.id);
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("account_type,is_private")
-        .eq("id", data.user.id)
-        .maybeSingle();
+      const [{ data: profile }, { data: pref }] = await Promise.all([
+        supabase.from("profiles").select("account_type,is_private").eq("id", data.user.id).maybeSingle(),
+        (supabase as any)
+          .from("notification_prefs")
+          .select("messages,reactions,follows")
+          .eq("user_id", data.user.id)
+          .maybeSingle(),
+      ]);
       setAccountType((profile as any)?.account_type === "professional" ? "professional" : "personal");
       setIsPrivate(Boolean((profile as any)?.is_private));
+      if (pref) setPrefs(pref as Prefs);
     })();
   }, [open, userId]);
 
@@ -79,9 +90,17 @@ export function HamburgerMenu() {
     if (error) {
       setIsPrivate(prev);
       toast.error(error.message);
-    } else {
-      toast.success(next ? "Account set to private" : "Account is public");
     }
+  }
+
+  async function updatePref(key: keyof Prefs, value: boolean) {
+    if (!userId) return;
+    const next = { ...prefs, [key]: value };
+    setPrefs(next);
+    const { error } = await (supabase as any)
+      .from("notification_prefs")
+      .upsert({ user_id: userId, ...next }, { onConflict: "user_id" });
+    if (error) toast.error(error.message);
   }
 
   async function handleLogout() {
@@ -105,20 +124,20 @@ export function HamburgerMenu() {
       {open && (
         <div className="fixed inset-0 z-50 flex">
           <div
-            className="absolute inset-0 bg-background/70 backdrop-blur-sm"
+            className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
             onClick={() => setOpen(false)}
             aria-hidden
           />
-          <aside className="relative h-full w-[86%] max-w-sm overflow-y-auto border-r border-border bg-card p-4 shadow-2xl">
-            <div className="flex items-center justify-between mb-4">
+          <aside className="relative h-full w-[88%] max-w-sm overflow-y-auto border-r border-border bg-card text-foreground shadow-2xl">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card px-3 py-2.5">
               {panel === "root" ? (
-                <span className="inline-flex items-center gap-2 font-semibold">
-                  <Sparkles size={16} className="text-primary" /> Settings
+                <span className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Sparkles size={15} className="text-primary" /> Settings
                 </span>
               ) : (
                 <button
                   onClick={() => setPanel("root")}
-                  className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+                  className="inline-flex items-center gap-1 text-sm text-foreground hover:text-primary"
                 >
                   <ChevronLeft size={16} /> Back
                 </button>
@@ -133,75 +152,95 @@ export function HamburgerMenu() {
             </div>
 
             {panel === "root" && (
-              <div className="space-y-3">
-                <Card icon={<UserCog size={16} />} title="Account Type" sub="Changes what counts show on your profile.">
-                  <div className="flex rounded-full border border-border overflow-hidden text-xs">
-                    {(["personal", "professional"] as const).map((t) => (
-                      <button
-                        key={t}
-                        disabled={busy}
-                        onClick={() => changeAccountType(t)}
-                        className={`px-3 py-1.5 transition ${accountType === t ? "text-primary-foreground" : "hover:bg-accent"}`}
-                        style={accountType === t ? { background: "var(--gradient-glow)" } : undefined}
-                      >
-                        {t === "personal" ? "Personal" : "Pro"}
-                      </button>
-                    ))}
-                  </div>
-                </Card>
+              <div className="pb-6">
+                <SectionHeader>Account</SectionHeader>
+                <Row icon={<UserCog size={16} />} label="Account Type">
+                  <Segmented
+                    value={accountType}
+                    disabled={busy}
+                    options={[
+                      ["personal", "Personal"],
+                      ["professional", "Pro"],
+                    ]}
+                    onChange={(v) => changeAccountType(v as "personal" | "professional")}
+                  />
+                </Row>
 
-                <Card icon={<Lock size={16} />} title="Private Account" sub="Others must send a follow request.">
+                <SectionHeader>Privacy</SectionHeader>
+                <Row icon={<Lock size={16} />} label="Private Account">
                   <Toggle checked={isPrivate} disabled={busy} onChange={togglePrivacy} />
-                </Card>
+                </Row>
+                <Row icon={<Ban size={16} />} label="Blocked Users" onClick={() => setPanel("blocked")}>
+                  <ChevronRight size={16} className="text-muted-foreground" />
+                </Row>
 
-                <Card
-                  icon={theme === "dark" ? <Moon size={16} /> : <Sun size={16} />}
-                  title="Theme"
-                  sub="Light or Lumen dark."
+                <SectionHeader>Notifications</SectionHeader>
+                <Row icon={<MessageSquare size={16} />} label="New messages">
+                  <Toggle checked={prefs.messages} onChange={(v) => updatePref("messages", v)} />
+                </Row>
+                <Row icon={<Heart size={16} />} label="Reactions">
+                  <Toggle checked={prefs.reactions} onChange={(v) => updatePref("reactions", v)} />
+                </Row>
+                <Row icon={<UserPlus size={16} />} label="New followers">
+                  <Toggle checked={prefs.follows} onChange={(v) => updatePref("follows", v)} />
+                </Row>
+                <p className="px-4 pb-1 text-[11px] text-muted-foreground">Quiet hours 10PM–6AM always respected.</p>
+
+                <SectionHeader>Appearance</SectionHeader>
+                <Row icon={theme === "dark" ? <Moon size={16} /> : <Sun size={16} />} label="Theme">
+                  <Segmented
+                    value={theme}
+                    options={[
+                      ["light", "Light"],
+                      ["dark", "Dark"],
+                    ]}
+                    onChange={(v) => switchTheme(v as Theme)}
+                  />
+                </Row>
+
+                <SectionHeader>Content</SectionHeader>
+                <Row icon={<Sparkles size={16} />} label="Story Settings" onClick={() => setPanel("story")}>
+                  <ChevronRight size={16} className="text-muted-foreground" />
+                </Row>
+                <Row icon={<BookMarked size={16} />} label="Note Settings" onClick={() => setPanel("note")}>
+                  <ChevronRight size={16} className="text-muted-foreground" />
+                </Row>
+                <Row icon={<Music size={16} />} label="Music Takedown" onClick={() => setPanel("music")}>
+                  <ChevronRight size={16} className="text-muted-foreground" />
+                </Row>
+                <Link
+                  to="/privacy"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 px-4 min-h-[48px] border-b border-border/60 hover:bg-accent transition"
                 >
-                  <div className="flex rounded-full border border-border overflow-hidden text-xs">
-                    {(["light", "dark"] as const).map((t) => (
-                      <button
-                        key={t}
-                        onClick={() => switchTheme(t)}
-                        className={`px-3 py-1.5 capitalize transition ${theme === t ? "text-primary-foreground" : "hover:bg-accent"}`}
-                        style={theme === t ? { background: "var(--gradient-glow)" } : undefined}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                  </div>
-                </Card>
-
-                {userId && <NotificationSettings userId={userId} />}
-
-                <RowButton icon={<Ban size={16} />} label="Blocked Users" onClick={() => setPanel("blocked")} />
-                <RowButton icon={<Sparkles size={16} />} label="Story Settings" onClick={() => setPanel("story")} />
-                <RowButton icon={<BookMarked size={16} />} label="Note Settings" onClick={() => setPanel("note")} />
-                <RowButton icon={<Music size={16} />} label="Music Takedown" onClick={() => setPanel("music")} />
+                  <span className="text-muted-foreground">
+                    <Shield size={16} />
+                  </span>
+                  <span className="flex-1 text-sm text-foreground">Privacy Policy</span>
+                  <ChevronRight size={16} className="text-muted-foreground" />
+                </Link>
 
                 <button
                   onClick={handleLogout}
-                  className="w-full rounded-2xl border border-border bg-card/70 p-4 flex items-center gap-3 text-left text-destructive hover:bg-accent transition"
+                  className="mt-3 mx-4 w-[calc(100%-2rem)] rounded-full border border-border px-4 py-2.5 flex items-center justify-center gap-2 text-sm font-medium text-destructive hover:bg-accent transition"
                 >
-                  <span className="h-9 w-9 rounded-full grid place-items-center bg-background/70 border border-border">
-                    <LogOut size={16} />
-                  </span>
-                  <span className="text-sm font-medium">Log out</span>
+                  <LogOut size={15} /> Log out
                 </button>
               </div>
             )}
 
-            {panel === "blocked" && <BlockedUsers meId={userId} />}
-            {panel === "story" && (
-              <Placeholder title="Story Settings" body="Stories are coming to Lumen soon. You'll be able to choose who can view and reply to your stories here." />
-            )}
-            {panel === "note" && (
-              <Placeholder title="Note Settings" body="Notes let you share a short thought with friends. Visibility controls will live here." />
-            )}
-            {panel === "music" && (
-              <Placeholder title="Music Takedown" body="If music in a post infringes your rights, this is where you'll file a takedown request. The form is not live yet." />
-            )}
+            <div className="p-4">
+              {panel === "blocked" && <BlockedUsers meId={userId} />}
+              {panel === "story" && (
+                <Placeholder title="Story Settings" body="Stories are coming to Lumen soon. You'll be able to choose who can view and reply to your stories here." />
+              )}
+              {panel === "note" && (
+                <Placeholder title="Note Settings" body="Notes let you share a short thought with friends. Visibility controls will live here." />
+              )}
+              {panel === "music" && (
+                <Placeholder title="Music Takedown" body="If music in a post infringes your rights, this is where you'll file a takedown request. The form is not live yet." />
+              )}
+            </div>
           </aside>
         </div>
       )}
@@ -209,27 +248,69 @@ export function HamburgerMenu() {
   );
 }
 
-function Card({
+function SectionHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      {children}
+    </p>
+  );
+}
+
+function Row({
   icon,
-  title,
-  sub,
+  label,
+  onClick,
   children,
 }: {
   icon: React.ReactNode;
-  title: string;
-  sub: string;
+  label: string;
+  onClick?: () => void;
   children?: React.ReactNode;
 }) {
-  return (
-    <div className="rounded-2xl border border-border bg-card/70 backdrop-blur p-4 flex items-center gap-3 text-left">
-      <div className="h-9 w-9 rounded-full grid place-items-center bg-background/70 border border-border shrink-0">
-        {icon}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium">{title}</p>
-        <p className="text-xs text-muted-foreground">{sub}</p>
-      </div>
+  const inner = (
+    <>
+      <span className="text-muted-foreground shrink-0">{icon}</span>
+      <span className="flex-1 text-sm text-foreground truncate">{label}</span>
       {children}
+    </>
+  );
+  if (onClick) {
+    return (
+      <button
+        onClick={onClick}
+        className="w-full flex items-center gap-3 px-4 min-h-[48px] border-b border-border/60 text-left hover:bg-accent transition"
+      >
+        {inner}
+      </button>
+    );
+  }
+  return <div className="flex items-center gap-3 px-4 min-h-[48px] border-b border-border/60">{inner}</div>;
+}
+
+function Segmented({
+  value,
+  options,
+  disabled,
+  onChange,
+}: {
+  value: string;
+  options: [string, string][];
+  disabled?: boolean;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex rounded-full border border-border overflow-hidden text-xs shrink-0">
+      {options.map(([v, label]) => (
+        <button
+          key={v}
+          disabled={disabled}
+          onClick={() => onChange(v)}
+          className={`px-3 py-1 transition ${value === v ? "text-primary-foreground" : "text-foreground hover:bg-accent"}`}
+          style={value === v ? { background: "var(--gradient-glow)" } : undefined}
+        >
+          {label}
+        </button>
+      ))}
     </div>
   );
 }
@@ -258,24 +339,10 @@ function Toggle({
   );
 }
 
-function RowButton({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="w-full rounded-2xl border border-border bg-card/70 p-4 flex items-center gap-3 text-left hover:bg-accent transition"
-    >
-      <span className="h-9 w-9 rounded-full grid place-items-center bg-background/70 border border-border">
-        {icon}
-      </span>
-      <span className="text-sm font-medium flex-1">{label}</span>
-    </button>
-  );
-}
-
 function Placeholder({ title, body }: { title: string; body: string }) {
   return (
-    <div className="rounded-2xl border border-border bg-card/70 p-5">
-      <p className="text-sm font-medium">{title}</p>
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <p className="text-sm font-medium text-foreground">{title}</p>
       <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{body}</p>
       <p className="mt-3 inline-block rounded-full border border-border px-2.5 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">
         Coming soon
@@ -291,12 +358,9 @@ function BlockedUsers({ meId }: { meId: string | null }) {
   useEffect(() => {
     if (!meId) return;
     (async () => {
-      const { data } = await (supabase as any)
-        .from("blocks")
-        .select("id,blocked_id")
-        .eq("blocker_id", meId);
+      const { data } = await (supabase as any).from("blocks").select("id,blocked_id").eq("blocker_id", meId);
       const list = (data ?? []) as { id: string; blocked_id: string }[];
-      let names: Record<string, string | null> = {};
+      const names: Record<string, string | null> = {};
       if (list.length) {
         const { data: profs } = await supabase
           .from("profiles")
@@ -326,8 +390,8 @@ function BlockedUsers({ meId }: { meId: string | null }) {
   return (
     <div className="space-y-2">
       {rows.map((r) => (
-        <div key={r.id} className="rounded-2xl border border-border bg-card/70 p-3 flex items-center gap-3">
-          <span className="text-sm flex-1 truncate">{r.name || "Lumen friend"}</span>
+        <div key={r.id} className="rounded-2xl border border-border bg-card p-3 flex items-center gap-3">
+          <span className="text-sm flex-1 truncate text-foreground">{r.name || "Lumen friend"}</span>
           <button
             onClick={() => unblock(r.id)}
             className="rounded-full border border-border px-3 py-1 text-xs hover:bg-accent transition"

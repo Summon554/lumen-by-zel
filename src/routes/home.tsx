@@ -13,7 +13,7 @@ import {
   Share2,
   Feather,
 } from "lucide-react";
-import { getSignedUrls, uploadUserFile } from "@/lib/storage";
+import { getSignedUrls, uploadUserFile, compressImage, MAX_VIDEO_BYTES, MAX_UPLOAD_BYTES } from "@/lib/storage";
 import { FounderBadge } from "@/components/FounderBadge";
 import { CommentThread, type ThreadComment, type CommentLikeState } from "@/components/CommentThread";
 import { ReactionBar } from "@/components/ReactionBar";
@@ -22,6 +22,9 @@ import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { DailyVerse } from "@/components/DailyVerse";
 import { EmptyState } from "@/components/EmptyState";
 import { LumenAvatar } from "@/components/LumenAvatar";
+import { MediaViewer, type ViewerMedia } from "@/components/MediaViewer";
+import { LumenVideo } from "@/components/LumenVideo";
+import { PostSkeleton } from "@/components/Skeleton";
 import {
   applyReaction,
   buildReactionState,
@@ -56,6 +59,9 @@ type PostRow = {
 };
 type CommentRow = ThreadComment;
 
+const VIDEO_RE = /\.(mp4|webm|mov|m4v)$/i;
+const isVideoPath = (p?: string | null) => !!p && VIDEO_RE.test(p);
+
 function HomePage() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
@@ -76,6 +82,7 @@ function HomePage() {
   const [reactions, setReactions] = useState<Record<string, ReactionState>>({});
   const [shareCounts, setShareCounts] = useState<Record<string, number>>({});
   const [blockedIds, setBlockedIds] = useState<Set<string>>(new Set());
+  const [viewer, setViewer] = useState<ViewerMedia | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -232,7 +239,10 @@ function HomePage() {
     setPosting(true);
     try {
       let imagePath: string | null = null;
-      if (file) imagePath = await uploadUserFile(userId, file, "posts");
+      if (file) {
+        const toUpload = file.type.startsWith("image/") ? await compressImage(file) : file;
+        imagePath = await uploadUserFile(userId, toUpload, "posts");
+      }
       const { error } = await supabase.from("posts").insert({
         user_id: userId,
         caption: caption.trim() || null,
@@ -384,8 +394,12 @@ function HomePage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen grid place-items-center" style={{ background: "var(--gradient-bg)" }}>
-        <div className="h-10 w-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+      <main className="min-h-screen pb-16" style={{ background: "var(--gradient-bg)" }}>
+        <div className="max-w-lg mx-auto px-4 pt-6 space-y-5">
+          <PostSkeleton />
+          <PostSkeleton />
+          <PostSkeleton />
+        </div>
       </main>
     );
   }
@@ -470,12 +484,22 @@ function HomePage() {
           <div className="flex items-center justify-between">
             <label className="inline-flex items-center gap-1.5 text-sm text-muted-foreground cursor-pointer hover:text-foreground">
               <ImageIcon size={16} />
-              Photo
+              Photo / Video
               <input
                 type="file"
-                accept="image/*"
+                accept="image/*,video/*"
                 className="hidden"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                onChange={(e) => {
+                  const f = e.target.files?.[0] ?? null;
+                  if (f) {
+                    const isVideo = f.type.startsWith("video/");
+                    if (f.size > (isVideo ? MAX_VIDEO_BYTES : MAX_UPLOAD_BYTES)) {
+                      toast.error(isVideo ? "Video is too large (max 50MB)" : "File is too large (max 10MB)");
+                      return;
+                    }
+                  }
+                  setFile(f);
+                }}
               />
             </label>
             <button
@@ -563,9 +587,11 @@ function HomePage() {
             onLocalAddComment={(c) => localAddComment(post.id, c)}
             onLocalCommentLikeChange={localChangeCommentLike}
             onToggleFollow={() => toggleFollow(post.user_id)}
+            onOpenMedia={setViewer}
           />
         ))}
       </div>
+      <MediaViewer media={viewer} onClose={() => setViewer(null)} />
     </main>
   );
 }
@@ -615,6 +641,7 @@ function PostCard({
   onLocalAddComment,
   onLocalCommentLikeChange,
   onToggleFollow,
+  onOpenMedia,
 }: {
   post: PostRow;
   me: string | null;
@@ -642,6 +669,7 @@ function PostCard({
   onLocalAddComment: (c: CommentRow) => void;
   onLocalCommentLikeChange: (commentId: string, next: CommentLikeState) => void;
   onToggleFollow: () => void;
+  onOpenMedia: (m: ViewerMedia) => void;
 }) {
   const when = useMemo(
     () => new Date(post.created_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }),
@@ -686,7 +714,22 @@ function PostCard({
           onBlockedChange={onBlockedChange}
         />
       </header>
-      {imageUrl && <img src={imageUrl} alt="" className="w-full max-h-[520px] object-cover" />}
+      {imageUrl &&
+        (isVideoPath(post.image_url) ? (
+          <div className="px-3 pb-2">
+            <LumenVideo src={imageUrl} onExpand={() => onOpenMedia({ url: imageUrl, type: "video" })} />
+          </div>
+        ) : (
+          <button type="button" className="block w-full" onClick={() => onOpenMedia({ url: imageUrl, type: "image" })}>
+            <img
+              src={imageUrl}
+              alt={post.caption ?? "Lumen post"}
+              loading="lazy"
+              decoding="async"
+              className="w-full max-h-[520px] object-cover cursor-zoom-in"
+            />
+          </button>
+        ))}
       {post.caption && (
         <p className="px-4 pt-3 text-sm text-foreground whitespace-pre-wrap">{post.caption}</p>
       )}
