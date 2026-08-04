@@ -587,9 +587,11 @@ function HomePage() {
             onLocalAddComment={(c) => localAddComment(post.id, c)}
             onLocalCommentLikeChange={localChangeCommentLike}
             onToggleFollow={() => toggleFollow(post.user_id)}
+            onOpenMedia={setViewer}
           />
         ))}
       </div>
+      <MediaViewer media={viewer} onClose={() => setViewer(null)} />
     </main>
   );
 }
