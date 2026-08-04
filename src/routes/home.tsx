@@ -484,12 +484,22 @@ function HomePage() {
           <div className="flex items-center justify-between">
             <label className="inline-flex items-center gap-1.5 text-sm text-muted-foreground cursor-pointer hover:text-foreground">
               <ImageIcon size={16} />
-              Photo
+              Photo / Video
               <input
                 type="file"
-                accept="image/*"
+                accept="image/*,video/*"
                 className="hidden"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                onChange={(e) => {
+                  const f = e.target.files?.[0] ?? null;
+                  if (f) {
+                    const isVideo = f.type.startsWith("video/");
+                    if (f.size > (isVideo ? MAX_VIDEO_BYTES : MAX_UPLOAD_BYTES)) {
+                      toast.error(isVideo ? "Video is too large (max 50MB)" : "File is too large (max 10MB)");
+                      return;
+                    }
+                  }
+                  setFile(f);
+                }}
               />
             </label>
             <button
