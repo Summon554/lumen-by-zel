@@ -423,13 +423,16 @@ function ChatPage() {
             <input
               ref={fileInput}
               type="file"
-              accept="image/*,application/pdf"
+              accept="image/*,video/*,application/pdf"
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0] ?? null;
-                if (f && f.size > MAX_UPLOAD_BYTES) {
-                  toast.error("File is too large (max 10MB)");
-                  return;
+                if (f) {
+                  const isVideo = f.type.startsWith("video/");
+                  if (f.size > (isVideo ? MAX_VIDEO_BYTES : MAX_UPLOAD_BYTES)) {
+                    toast.error(isVideo ? "Video is too large (max 50MB)" : "File is too large (max 10MB)");
+                    return;
+                  }
                 }
                 setPendingFile(f);
               }}
@@ -461,6 +464,7 @@ function ChatPage() {
           </p>
         )}
       </form>
+      <MediaViewer media={viewer} onClose={() => setViewer(null)} />
     </main>
   );
 }
