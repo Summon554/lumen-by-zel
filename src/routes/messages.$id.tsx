@@ -294,7 +294,14 @@ function ChatPage() {
       </header>
 
       <section className="flex-1 max-w-lg w-full mx-auto px-4 py-4 space-y-2">
-        {loading && <p className="text-sm text-muted-foreground text-center py-8">Loading…</p>}
+        {loading && (
+          <div className="space-y-3 py-4">
+            <BubbleSkeleton />
+            <BubbleSkeleton mine />
+            <BubbleSkeleton />
+            <BubbleSkeleton mine />
+          </div>
+        )}
         {!loading && visible.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-8">Say hello 👋</p>
         )}
@@ -316,7 +323,31 @@ function ChatPage() {
                   ) : (
                     <>
                       {url && m.attachment_type === "image" && (
-                        <img src={url} alt={m.attachment_name ?? ""} className="rounded-xl mb-1 max-h-64 object-cover" />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setViewer({ url, type: "image", name: m.attachment_name ?? null })
+                          }
+                          className="block"
+                        >
+                          <img
+                            src={url}
+                            alt={m.attachment_name ?? ""}
+                            loading="lazy"
+                            decoding="async"
+                            className="rounded-xl mb-1 max-h-64 object-cover cursor-zoom-in"
+                          />
+                        </button>
+                      )}
+                      {url && m.attachment_type === "video" && (
+                        <div className="mb-1 w-[240px] max-w-full">
+                          <LumenVideo
+                            src={url}
+                            onExpand={() =>
+                              setViewer({ url, type: "video", name: m.attachment_name ?? null })
+                            }
+                          />
+                        </div>
                       )}
                       {url && m.attachment_type === "pdf" && (
                         <a
