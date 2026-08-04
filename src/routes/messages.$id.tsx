@@ -1,12 +1,22 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { getSignedUrl, getSignedUrls, uploadUserFile, MAX_UPLOAD_BYTES } from "@/lib/storage";
+import {
+  getSignedUrl,
+  getSignedUrls,
+  uploadUserFile,
+  compressImage,
+  MAX_UPLOAD_BYTES,
+  MAX_VIDEO_BYTES,
+} from "@/lib/storage";
 import { toast } from "sonner";
 import { ArrowLeft, Send, Paperclip, Check, CheckCheck, Trash2, FileText } from "lucide-react";
 import { UserActionMenu } from "@/components/UserActionMenu";
 import { PresenceDot } from "@/components/PresenceDot";
 import { isOnline, lastSeenLabel } from "@/lib/presence";
+import { MediaViewer, type ViewerMedia } from "@/components/MediaViewer";
+import { LumenVideo } from "@/components/LumenVideo";
+import { BubbleSkeleton } from "@/components/Skeleton";
 
 export const Route = createFileRoute("/messages/$id")({
   ssr: false,
@@ -58,6 +68,7 @@ function ChatPage() {
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [viewer, setViewer] = useState<ViewerMedia | null>(null);
 
   async function load(meId: string) {
     const { data } = await supabase
@@ -210,13 +221,16 @@ function ChatPage() {
       let attachment_type: string | null = null;
       let attachment_name: string | null = null;
       if (pendingFile) {
-        if (pendingFile.size > MAX_UPLOAD_BYTES) throw new Error("File is too large (max 10MB)");
-        const ok =
-          pendingFile.type.startsWith("image/") || pendingFile.type === "application/pdf";
-        if (!ok) throw new Error("Only images and PDF files can be sent");
-        attachment_url = await uploadUserFile(me, pendingFile, "chat");
-        attachment_type = pendingFile.type.startsWith("image/") ? "image" : "pdf";
-        attachment_name = pendingFile.name;
+        const isImage = pendingFile.type.startsWith("image/");
+        const isVideo = pendingFile.type.startsWith("video/");
+        const isPdf = pendingFile.type === "application/pdf";
+        if (!isImage && !isVideo && !isPdf) throw new Error("Only photos, videos and PDF files can be sent");
+        if (isVideo && pendingFile.size > MAX_VIDEO_BYTES) throw new Error("Video is too large (max 50MB)");
+        if (!isVideo && pendingFile.size > MAX_UPLOAD_BYTES) throw new Error("File is too large (max 10MB)");
+        const toSend = isImage ? await compressImage(pendingFile) : pendingFile;
+        attachment_url = await uploadUserFile(me, toSend, "chat");
+        attachment_type = isImage ? "image" : isVideo ? "video" : "pdf";
+        attachment_name = toSend.name;
       }
       const { data, error } = await (supabase as any)
         .from("messages")
