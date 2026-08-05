@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { moderate } from "@/lib/moderation";
+import { ReportButton } from "@/components/ReportButton";
 import { toast } from "sonner";
 import { FounderBadge } from "@/components/FounderBadge";
 import { ReactionBar } from "@/components/ReactionBar";
