@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      appeals: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          resolved_at: string | null
+          status: string
+          strike_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          resolved_at?: string | null
+          status?: string
+          strike_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          resolved_at?: string | null
+          status?: string
+          strike_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appeals_strike_id_fkey"
+            columns: ["strike_id"]
+            isOneToOne: false
+            referencedRelation: "strikes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blocks: {
         Row: {
           blocked_id: string
@@ -207,6 +245,36 @@ export type Database = {
         }
         Relationships: []
       }
+      guardian_verifications: {
+        Row: {
+          created_at: string
+          expires_at: string
+          guardian_email: string
+          id: string
+          token: string
+          user_id: string
+          verified_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          guardian_email: string
+          id?: string
+          token: string
+          user_id: string
+          verified_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          guardian_email?: string
+          id?: string
+          token?: string
+          user_id?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       likes: {
         Row: {
           created_at: string
@@ -301,6 +369,39 @@ export type Database = {
           read_at?: string | null
           receiver_id?: string
           sender_id?: string
+        }
+        Relationships: []
+      }
+      moderation_flags: {
+        Row: {
+          action: string
+          categories: string[]
+          content_id: string | null
+          content_type: string
+          created_at: string
+          excerpt: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          action?: string
+          categories?: string[]
+          content_id?: string | null
+          content_type: string
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          categories?: string[]
+          content_id?: string | null
+          content_type?: string
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -415,40 +516,61 @@ export type Database = {
           account_type: string
           avatar_url: string | null
           bio: string | null
+          birthdate: string | null
           cover_url: string | null
           created_at: string
+          deletion_requested_at: string | null
           email: string | null
+          guardian_email: string | null
+          guardian_verified: boolean
           id: string
           is_founder: boolean
+          is_minor: boolean
           is_private: boolean
           last_seen_at: string | null
           name: string | null
+          strikes: number
+          suspended_until: string | null
         }
         Insert: {
           account_type?: string
           avatar_url?: string | null
           bio?: string | null
+          birthdate?: string | null
           cover_url?: string | null
           created_at?: string
+          deletion_requested_at?: string | null
           email?: string | null
+          guardian_email?: string | null
+          guardian_verified?: boolean
           id: string
           is_founder?: boolean
+          is_minor?: boolean
           is_private?: boolean
           last_seen_at?: string | null
           name?: string | null
+          strikes?: number
+          suspended_until?: string | null
         }
         Update: {
           account_type?: string
           avatar_url?: string | null
           bio?: string | null
+          birthdate?: string | null
           cover_url?: string | null
           created_at?: string
+          deletion_requested_at?: string | null
           email?: string | null
+          guardian_email?: string | null
+          guardian_verified?: boolean
           id?: string
           is_founder?: boolean
+          is_minor?: boolean
           is_private?: boolean
           last_seen_at?: string | null
           name?: string | null
+          strikes?: number
+          suspended_until?: string | null
         }
         Relationships: []
       }
@@ -486,6 +608,8 @@ export type Database = {
       }
       reports: {
         Row: {
+          content_id: string | null
+          content_type: string | null
           created_at: string
           details: string | null
           id: string
@@ -493,8 +617,12 @@ export type Database = {
           reason: string
           reported_user_id: string | null
           reporter_id: string
+          resolved_at: string | null
+          status: string
         }
         Insert: {
+          content_id?: string | null
+          content_type?: string | null
           created_at?: string
           details?: string | null
           id?: string
@@ -502,8 +630,12 @@ export type Database = {
           reason: string
           reported_user_id?: string | null
           reporter_id: string
+          resolved_at?: string | null
+          status?: string
         }
         Update: {
+          content_id?: string | null
+          content_type?: string | null
           created_at?: string
           details?: string | null
           id?: string
@@ -511,6 +643,8 @@ export type Database = {
           reason?: string
           reported_user_id?: string | null
           reporter_id?: string
+          resolved_at?: string | null
+          status?: string
         }
         Relationships: [
           {
@@ -521,6 +655,93 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      strikes: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          reason: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          reason?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      takedown_requests: {
+        Row: {
+          content_url: string | null
+          created_at: string
+          details: string | null
+          id: string
+          requester_email: string
+          requester_id: string | null
+          requester_name: string
+          rights_statement: string
+          status: string
+          work_title: string
+        }
+        Insert: {
+          content_url?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          requester_email: string
+          requester_id?: string | null
+          requester_name: string
+          rights_statement: string
+          status?: string
+          work_title: string
+        }
+        Update: {
+          content_url?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          requester_email?: string
+          requester_id?: string | null
+          requester_name?: string
+          rights_statement?: string
+          status?: string
+          work_title?: string
+        }
+        Relationships: []
+      }
+      user_consents: {
+        Row: {
+          accepted_at: string
+          doc_kind: string
+          id: string
+          user_id: string
+          version: string
+        }
+        Insert: {
+          accepted_at?: string
+          doc_kind: string
+          id?: string
+          user_id: string
+          version: string
+        }
+        Update: {
+          accepted_at?: string
+          doc_kind?: string
+          id?: string
+          user_id?: string
+          version?: string
+        }
+        Relationships: []
       }
     }
     Views: {
