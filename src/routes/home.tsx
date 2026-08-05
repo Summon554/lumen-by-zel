@@ -238,6 +238,12 @@ function HomePage() {
     }
     setPosting(true);
     try {
+      const check = moderate(caption);
+      if (!check.ok) {
+        toast.error(check.message!);
+        setPosting(false);
+        return;
+      }
       let imagePath: string | null = null;
       if (file) {
         const toUpload = file.type.startsWith("image/") ? await compressImage(file) : file;

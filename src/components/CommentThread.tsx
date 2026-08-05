@@ -105,6 +105,11 @@ export function CommentThread({
 
   async function submit(content: string, parentId: string | null, recipientId: string) {
     if (!meId || !content.trim()) return;
+    const check = moderate(content);
+    if (!check.ok) {
+      toast.error(check.message!);
+      return;
+    }
     const { data, error } = await (supabase as any)
       .from("comments")
       .insert({ post_id: postId, user_id: meId, content: content.trim(), parent_id: parentId })
