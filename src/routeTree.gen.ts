@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as TakedownRouteImport } from './routes/takedown'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as ProfileRouteImport } from './routes/profile'
@@ -21,10 +22,16 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as MessagesIndexRouteImport } from './routes/messages.index'
 import { Route as UIdRouteImport } from './routes/u.$id'
 import { Route as MessagesIdRouteImport } from './routes/messages.$id'
+import { Route as GuardianTokenRouteImport } from './routes/guardian.$token'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TakedownRoute = TakedownRouteImport.update({
+  id: '/takedown',
+  path: '/takedown',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignupRoute = SignupRouteImport.update({
@@ -82,6 +89,11 @@ const MessagesIdRoute = MessagesIdRouteImport.update({
   path: '/messages/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GuardianTokenRoute = GuardianTokenRouteImport.update({
+  id: '/guardian/$token',
+  path: '/guardian/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -92,7 +104,9 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
+  '/takedown': typeof TakedownRoute
   '/terms': typeof TermsRoute
+  '/guardian/$token': typeof GuardianTokenRoute
   '/messages/$id': typeof MessagesIdRoute
   '/u/$id': typeof UIdRoute
   '/messages/': typeof MessagesIndexRoute
@@ -106,7 +120,9 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
+  '/takedown': typeof TakedownRoute
   '/terms': typeof TermsRoute
+  '/guardian/$token': typeof GuardianTokenRoute
   '/messages/$id': typeof MessagesIdRoute
   '/u/$id': typeof UIdRoute
   '/messages': typeof MessagesIndexRoute
@@ -121,7 +137,9 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
+  '/takedown': typeof TakedownRoute
   '/terms': typeof TermsRoute
+  '/guardian/$token': typeof GuardianTokenRoute
   '/messages/$id': typeof MessagesIdRoute
   '/u/$id': typeof UIdRoute
   '/messages/': typeof MessagesIndexRoute
@@ -137,7 +155,9 @@ export interface FileRouteTypes {
     | '/profile'
     | '/search'
     | '/signup'
+    | '/takedown'
     | '/terms'
+    | '/guardian/$token'
     | '/messages/$id'
     | '/u/$id'
     | '/messages/'
@@ -151,7 +171,9 @@ export interface FileRouteTypes {
     | '/profile'
     | '/search'
     | '/signup'
+    | '/takedown'
     | '/terms'
+    | '/guardian/$token'
     | '/messages/$id'
     | '/u/$id'
     | '/messages'
@@ -165,7 +187,9 @@ export interface FileRouteTypes {
     | '/profile'
     | '/search'
     | '/signup'
+    | '/takedown'
     | '/terms'
+    | '/guardian/$token'
     | '/messages/$id'
     | '/u/$id'
     | '/messages/'
@@ -180,7 +204,9 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   SearchRoute: typeof SearchRoute
   SignupRoute: typeof SignupRoute
+  TakedownRoute: typeof TakedownRoute
   TermsRoute: typeof TermsRoute
+  GuardianTokenRoute: typeof GuardianTokenRoute
   MessagesIdRoute: typeof MessagesIdRoute
   UIdRoute: typeof UIdRoute
   MessagesIndexRoute: typeof MessagesIndexRoute
@@ -193,6 +219,13 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/takedown': {
+      id: '/takedown'
+      path: '/takedown'
+      fullPath: '/takedown'
+      preLoaderRoute: typeof TakedownRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signup': {
@@ -272,6 +305,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MessagesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/guardian/$token': {
+      id: '/guardian/$token'
+      path: '/guardian/$token'
+      fullPath: '/guardian/$token'
+      preLoaderRoute: typeof GuardianTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -284,7 +324,9 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   SearchRoute: SearchRoute,
   SignupRoute: SignupRoute,
+  TakedownRoute: TakedownRoute,
   TermsRoute: TermsRoute,
+  GuardianTokenRoute: GuardianTokenRoute,
   MessagesIdRoute: MessagesIdRoute,
   UIdRoute: UIdRoute,
   MessagesIndexRoute: MessagesIndexRoute,
