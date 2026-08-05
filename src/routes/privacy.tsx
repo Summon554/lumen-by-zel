@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Sparkles } from "lucide-react";
+import { INDEPENDENCE_DISCLAIMER, LEGAL_CONTACT, LEGAL_VERSIONS } from "@/lib/legal";
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
@@ -31,7 +32,14 @@ function PrivacyPage() {
 
         <article className="rounded-3xl border border-border bg-card/70 backdrop-blur p-6 sm:p-8 space-y-5">
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Privacy Policy</h1>
-          <p className="text-sm text-muted-foreground">Last updated: today</p>
+          <p className="text-sm text-muted-foreground">
+            Version {LEGAL_VERSIONS.privacy} · Philippine Data Privacy Act of 2012 (RA 10173)
+          </p>
+
+          <section className="space-y-2">
+            <h2 className="text-lg font-semibold">Who we are</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">{INDEPENDENCE_DISCLAIMER}</p>
+          </section>
 
           <section className="space-y-2">
             <h2 className="text-lg font-semibold">What we collect</h2>
@@ -53,9 +61,31 @@ function PrivacyPage() {
           <section className="space-y-2">
             <h2 className="text-lg font-semibold">Your control</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              You can edit your profile, delete your posts, or delete your account at any
-              time. Deleting your account removes your profile, posts, likes, and comments
-              from Lumen.
+              You can edit your profile, delete your posts, download a full JSON copy of your
+              data, or delete your account at any time from{" "}
+              <Link to="/account" className="text-foreground underline underline-offset-4">
+                Your data &amp; account
+              </Link>
+              . Deletion has a 7-day undo window, after which your profile, posts, likes,
+              comments, reactions, and messages are permanently erased.
+            </p>
+          </section>
+
+          <section className="space-y-2">
+            <h2 className="text-lg font-semibold">Young people</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Lumen is for ages 13 and up. Accounts belonging to anyone under 18 require a parent
+              or guardian to confirm consent through a verification link we email them. Until
+              that confirmation arrives, the account cannot receive messages from strangers and
+              its posts are limited to followers.
+            </p>
+          </section>
+
+          <section className="space-y-2">
+            <h2 className="text-lg font-semibold">Changes to this policy</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Each policy carries a version. When we publish a new version, you'll be asked to
+              review and consent again before you continue using Lumen.
             </p>
           </section>
 
@@ -63,8 +93,8 @@ function PrivacyPage() {
             <h2 className="text-lg font-semibold">Contact</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Questions? Reach us at{" "}
-              <a href="mailto:hello@lumen.app" className="text-foreground underline underline-offset-4">
-                hello@lumen.app
+              <a href={`mailto:${LEGAL_CONTACT}`} className="text-foreground underline underline-offset-4">
+                {LEGAL_CONTACT}
               </a>
               .
             </p>
