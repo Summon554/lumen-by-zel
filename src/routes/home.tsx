@@ -415,6 +415,7 @@ function HomePage() {
   return (
     <main className="min-h-screen pb-16" style={{ background: "var(--gradient-bg)" }}>
       <header className="sticky top-0 z-20 backdrop-blur bg-background/60 border-b border-border">
+        <ConsentModal userId={userId} />
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-1">
             <HamburgerMenu />
