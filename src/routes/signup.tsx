@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AuthShell } from "./login";
+import { ageFrom } from "@/lib/legal";
+import { recordConsents } from "@/lib/consent";
 
 export const Route = createFileRoute("/signup")({
   ssr: false,
@@ -22,6 +24,8 @@ function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [birthdate, setBirthdate] = useState("");
+  const [guardianEmail, setGuardianEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [agreed, setAgreed] = useState(false);
 
@@ -31,10 +35,25 @@ function SignupPage() {
     });
   }, [navigate]);
 
+  const age = ageFrom(birthdate || null);
+  const isMinor = age >= 0 && age < 18;
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!agreed) {
       toast.error("Please agree to the Terms and Privacy Policy");
+      return;
+    }
+    if (age < 0) {
+      toast.error("Please enter your date of birth");
+      return;
+    }
+    if (age < 13) {
+      toast.error("You must be at least 13 years old to use Lumen");
+      return;
+    }
+    if (isMinor && !guardianEmail.trim()) {
+      toast.error("A parent or guardian email is required for under-18 accounts");
       return;
     }
     if (password.length < 6) {
@@ -42,7 +61,7 @@ function SignupPage() {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -50,11 +69,25 @@ function SignupPage() {
         data: { name },
       },
     });
-    setLoading(false);
     if (error) {
+      setLoading(false);
       toast.error(error.message);
       return;
     }
+
+    const uid = data.user?.id;
+    if (uid) {
+      await (supabase as any)
+        .from("profiles")
+        .update({
+          birthdate,
+          is_minor: isMinor,
+          guardian_email: isMinor ? guardianEmail.trim() : null,
+        })
+        .eq("id", uid);
+      await recordConsents(uid, ["terms", "privacy", "data_privacy_act"]);
+    }
+    setLoading(false);
     toast.success("Welcome to Lumen ✨");
     navigate({ to: "/home", replace: true });
   }
@@ -64,6 +97,21 @@ function SignupPage() {
       <form onSubmit={onSubmit} className="space-y-4">
         <Field label="Name" type="text" value={name} onChange={setName} autoComplete="name" />
         <Field label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" />
+        <Field label="Date of birth" type="date" value={birthdate} onChange={setBirthdate} autoComplete="bday" />
+        {isMinor && (
+          <div className="space-y-1.5">
+            <Field
+              label="Parent or guardian email"
+              type="email"
+              value={guardianEmail}
+              onChange={setGuardianEmail}
+            />
+            <p className="text-xs text-muted-foreground">
+              We'll send them a link to confirm. Until they do, strangers can't message you and your
+              posts stay limited to people you follow.
+            </p>
+          </div>
+        )}
         <Field
           label="Password"
           type="password"

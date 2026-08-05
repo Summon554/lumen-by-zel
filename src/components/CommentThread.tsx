@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { moderate } from "@/lib/moderation";
+import { ReportButton } from "@/components/ReportButton";
 import { toast } from "sonner";
 import { FounderBadge } from "@/components/FounderBadge";
 import { ReactionBar } from "@/components/ReactionBar";
@@ -105,6 +107,11 @@ export function CommentThread({
 
   async function submit(content: string, parentId: string | null, recipientId: string) {
     if (!meId || !content.trim()) return;
+    const check = moderate(content);
+    if (!check.ok) {
+      toast.error(check.message!);
+      return;
+    }
     const { data, error } = await (supabase as any)
       .from("comments")
       .insert({ post_id: postId, user_id: meId, content: content.trim(), parent_id: parentId })
@@ -169,6 +176,7 @@ export function CommentThread({
                 Reply
               </button>
             )}
+            <ReportButton meId={meId} contentType="comment" contentId={c.id} authorId={c.user_id} />
           </div>
           {!indented && replyTo === c.id && (
             <form

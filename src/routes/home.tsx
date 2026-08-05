@@ -1,6 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { moderate } from "@/lib/moderation";
+import { ConsentModal } from "@/components/ConsentModal";
 import { toast } from "sonner";
 import {
   Heart,
@@ -238,6 +240,12 @@ function HomePage() {
     }
     setPosting(true);
     try {
+      const check = moderate(caption);
+      if (!check.ok) {
+        toast.error(check.message!);
+        setPosting(false);
+        return;
+      }
       let imagePath: string | null = null;
       if (file) {
         const toUpload = file.type.startsWith("image/") ? await compressImage(file) : file;
@@ -407,6 +415,7 @@ function HomePage() {
   return (
     <main className="min-h-screen pb-16" style={{ background: "var(--gradient-bg)" }}>
       <header className="sticky top-0 z-20 backdrop-blur bg-background/60 border-b border-border">
+        <ConsentModal userId={userId} />
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-1">
             <HamburgerMenu />
