@@ -26,7 +26,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { applyTheme, getStoredTheme, type Theme } from "@/lib/theme";
 
-type Panel = "root" | "blocked" | "story" | "note" | "music";
+type Panel = "root" | "blocked" | "story" | "note";
 type Prefs = { messages: boolean; reactions: boolean; follows: boolean };
 
 export function HamburgerMenu() {
