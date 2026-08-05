@@ -6,6 +6,8 @@ import {
   Bell,
   ChevronLeft,
   ChevronRight,
+  Download,
+  FileText,
   Heart,
   Lock,
   LogOut,
@@ -205,9 +207,28 @@ export function HamburgerMenu() {
                 <Row icon={<BookMarked size={16} />} label="Note Settings" onClick={() => setPanel("note")}>
                   <ChevronRight size={16} className="text-muted-foreground" />
                 </Row>
-                <Row icon={<Music size={16} />} label="Music Takedown" onClick={() => setPanel("music")}>
+                <Link
+                  to="/takedown"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 px-4 min-h-[48px] border-b border-border/60 hover:bg-accent transition"
+                >
+                  <span className="text-muted-foreground">
+                    <Music size={16} />
+                  </span>
+                  <span className="flex-1 text-sm text-foreground">Music Takedown</span>
                   <ChevronRight size={16} className="text-muted-foreground" />
-                </Row>
+                </Link>
+                <Link
+                  to="/account"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 px-4 min-h-[48px] border-b border-border/60 hover:bg-accent transition"
+                >
+                  <span className="text-muted-foreground">
+                    <Download size={16} />
+                  </span>
+                  <span className="flex-1 text-sm text-foreground">Your data &amp; account</span>
+                  <ChevronRight size={16} className="text-muted-foreground" />
+                </Link>
                 <Link
                   to="/privacy"
                   onClick={() => setOpen(false)}
@@ -217,6 +238,17 @@ export function HamburgerMenu() {
                     <Shield size={16} />
                   </span>
                   <span className="flex-1 text-sm text-foreground">Privacy Policy</span>
+                  <ChevronRight size={16} className="text-muted-foreground" />
+                </Link>
+                <Link
+                  to="/terms"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 px-4 min-h-[48px] border-b border-border/60 hover:bg-accent transition"
+                >
+                  <span className="text-muted-foreground">
+                    <FileText size={16} />
+                  </span>
+                  <span className="flex-1 text-sm text-foreground">Terms of Service</span>
                   <ChevronRight size={16} className="text-muted-foreground" />
                 </Link>
 
@@ -236,9 +268,6 @@ export function HamburgerMenu() {
               )}
               {panel === "note" && (
                 <Placeholder title="Note Settings" body="Notes let you share a short thought with friends. Visibility controls will live here." />
-              )}
-              {panel === "music" && (
-                <Placeholder title="Music Takedown" body="If music in a post infringes your rights, this is where you'll file a takedown request. The form is not live yet." />
               )}
             </div>
           </aside>
