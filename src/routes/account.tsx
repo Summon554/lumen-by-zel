@@ -154,7 +154,10 @@ function AccountPage() {
     setBusy(false);
   }
 
-  const minor = profile ? (profile.is_minor ?? ageFrom(profile.birthdate) >= 0 && ageFrom(profile.birthdate) < 18) : false;
+  const derivedAge = profile ? ageFrom(profile.birthdate) : -1;
+  const minor = profile
+    ? (profile.is_minor ?? (derivedAge >= 0 && derivedAge < 18))
+    : false;
   const purgeDate = profile?.deletion_requested_at
     ? new Date(new Date(profile.deletion_requested_at).getTime() + 7 * 86400000)
     : null;
