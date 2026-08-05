@@ -175,6 +175,7 @@ export function CommentThread({
                 Reply
               </button>
             )}
+            <ReportButton meId={meId} contentType="comment" contentId={c.id} authorId={c.user_id} />
           </div>
           {!indented && replyTo === c.id && (
             <form
