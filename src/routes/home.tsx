@@ -1,6 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { moderate } from "@/lib/moderation";
+import { ConsentModal } from "@/components/ConsentModal";
 import { toast } from "sonner";
 import {
   Heart,
