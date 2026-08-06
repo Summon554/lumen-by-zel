@@ -18,10 +18,12 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HomeRouteImport } from './routes/home'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MessagesIndexRouteImport } from './routes/messages.index'
 import { Route as UIdRouteImport } from './routes/u.$id'
+import { Route as StoriesArchiveRouteImport } from './routes/stories.archive'
 import { Route as MessagesIdRouteImport } from './routes/messages.$id'
 import { Route as GuardianTokenRouteImport } from './routes/guardian.$token'
 
@@ -70,6 +72,11 @@ const HomeRoute = HomeRouteImport.update({
   path: '/home',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountRoute = AccountRouteImport.update({
   id: '/account',
   path: '/account',
@@ -90,6 +97,11 @@ const UIdRoute = UIdRouteImport.update({
   path: '/u/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StoriesArchiveRoute = StoriesArchiveRouteImport.update({
+  id: '/stories/archive',
+  path: '/stories/archive',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MessagesIdRoute = MessagesIdRouteImport.update({
   id: '/messages/$id',
   path: '/messages/$id',
@@ -104,6 +116,7 @@ const GuardianTokenRoute = GuardianTokenRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
+  '/admin': typeof AdminRoute
   '/home': typeof HomeRoute
   '/login': typeof LoginRoute
   '/notifications': typeof NotificationsRoute
@@ -115,12 +128,14 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/guardian/$token': typeof GuardianTokenRoute
   '/messages/$id': typeof MessagesIdRoute
+  '/stories/archive': typeof StoriesArchiveRoute
   '/u/$id': typeof UIdRoute
   '/messages/': typeof MessagesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
+  '/admin': typeof AdminRoute
   '/home': typeof HomeRoute
   '/login': typeof LoginRoute
   '/notifications': typeof NotificationsRoute
@@ -132,6 +147,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/guardian/$token': typeof GuardianTokenRoute
   '/messages/$id': typeof MessagesIdRoute
+  '/stories/archive': typeof StoriesArchiveRoute
   '/u/$id': typeof UIdRoute
   '/messages': typeof MessagesIndexRoute
 }
@@ -139,6 +155,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
+  '/admin': typeof AdminRoute
   '/home': typeof HomeRoute
   '/login': typeof LoginRoute
   '/notifications': typeof NotificationsRoute
@@ -150,6 +167,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/guardian/$token': typeof GuardianTokenRoute
   '/messages/$id': typeof MessagesIdRoute
+  '/stories/archive': typeof StoriesArchiveRoute
   '/u/$id': typeof UIdRoute
   '/messages/': typeof MessagesIndexRoute
 }
@@ -158,6 +176,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/account'
+    | '/admin'
     | '/home'
     | '/login'
     | '/notifications'
@@ -169,12 +188,14 @@ export interface FileRouteTypes {
     | '/terms'
     | '/guardian/$token'
     | '/messages/$id'
+    | '/stories/archive'
     | '/u/$id'
     | '/messages/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/account'
+    | '/admin'
     | '/home'
     | '/login'
     | '/notifications'
@@ -186,12 +207,14 @@ export interface FileRouteTypes {
     | '/terms'
     | '/guardian/$token'
     | '/messages/$id'
+    | '/stories/archive'
     | '/u/$id'
     | '/messages'
   id:
     | '__root__'
     | '/'
     | '/account'
+    | '/admin'
     | '/home'
     | '/login'
     | '/notifications'
@@ -203,6 +226,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/guardian/$token'
     | '/messages/$id'
+    | '/stories/archive'
     | '/u/$id'
     | '/messages/'
   fileRoutesById: FileRoutesById
@@ -210,6 +234,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRoute: typeof AccountRoute
+  AdminRoute: typeof AdminRoute
   HomeRoute: typeof HomeRoute
   LoginRoute: typeof LoginRoute
   NotificationsRoute: typeof NotificationsRoute
@@ -221,6 +246,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   GuardianTokenRoute: typeof GuardianTokenRoute
   MessagesIdRoute: typeof MessagesIdRoute
+  StoriesArchiveRoute: typeof StoriesArchiveRoute
   UIdRoute: typeof UIdRoute
   MessagesIndexRoute: typeof MessagesIndexRoute
 }
@@ -290,6 +316,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HomeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/account': {
       id: '/account'
       path: '/account'
@@ -318,6 +351,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/stories/archive': {
+      id: '/stories/archive'
+      path: '/stories/archive'
+      fullPath: '/stories/archive'
+      preLoaderRoute: typeof StoriesArchiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/messages/$id': {
       id: '/messages/$id'
       path: '/messages/$id'
@@ -338,6 +378,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
+  AdminRoute: AdminRoute,
   HomeRoute: HomeRoute,
   LoginRoute: LoginRoute,
   NotificationsRoute: NotificationsRoute,
@@ -349,19 +390,10 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   GuardianTokenRoute: GuardianTokenRoute,
   MessagesIdRoute: MessagesIdRoute,
+  StoriesArchiveRoute: StoriesArchiveRoute,
   UIdRoute: UIdRoute,
   MessagesIndexRoute: MessagesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

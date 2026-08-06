@@ -235,3 +235,30 @@
 @utility animate-float-up {
   animation: float-up 0.9s ease-out forwards;
 }
+
+/* ---- Stories: animated unviewed ring + sparkle ---- */
+@keyframes story-ring-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes story-sparkle {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+@utility animate-story-ring {
+  animation: story-ring-spin 3.5s linear infinite;
+}
+
+@utility animate-story-sparkle {
+  animation: story-sparkle 1.6s ease-in-out infinite;
+}

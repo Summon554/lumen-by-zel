@@ -4,8 +4,6 @@ import {
   Ban,
   BookMarked,
   Bell,
-  ChevronLeft,
-  ChevronRight,
   Download,
   FileText,
   Heart,
@@ -25,14 +23,14 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { applyTheme, getStoredTheme, type Theme } from "@/lib/theme";
+import { useIsAdmin } from "@/lib/admin";
 
-type Panel = "root" | "blocked" | "story" | "note";
 type Prefs = { messages: boolean; reactions: boolean; follows: boolean };
 
 export function HamburgerMenu() {
   const navigate = useNavigate();
+  const { isAdmin } = useIsAdmin();
   const [open, setOpen] = useState(false);
-  const [panel, setPanel] = useState<Panel>("root");
   const [userId, setUserId] = useState<string | null>(null);
   const [theme, setTheme] = useState<Theme>("light");
   const [accountType, setAccountType] = useState<"personal" | "professional">("personal");
@@ -114,7 +112,6 @@ export function HamburgerMenu() {
     <>
       <button
         onClick={() => {
-          setPanel("root");
           setOpen(true);
         }}
         className="h-9 w-9 grid place-items-center rounded-full hover:bg-accent transition"
@@ -130,20 +127,11 @@ export function HamburgerMenu() {
             onClick={() => setOpen(false)}
             aria-hidden
           />
-          <aside className="relative h-full w-[88%] max-w-sm overflow-y-auto border-r border-border bg-card text-foreground shadow-2xl">
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card px-3 py-2.5">
-              {panel === "root" ? (
-                <span className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
-                  <Sparkles size={15} className="text-primary" /> Settings
-                </span>
-              ) : (
-                <button
-                  onClick={() => setPanel("root")}
-                  className="inline-flex items-center gap-1 text-sm text-foreground hover:text-primary"
-                >
-                  <ChevronLeft size={16} /> Back
-                </button>
-              )}
+          <aside className="relative h-auto min-h-full w-[88%] max-w-sm border-r border-border bg-card text-foreground shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border bg-card px-3 py-2.5">
+              <span className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Sparkles size={15} className="text-primary" /> Settings
+              </span>
               <button
                 onClick={() => setOpen(false)}
                 className="h-8 w-8 grid place-items-center rounded-full hover:bg-accent transition"
@@ -153,8 +141,7 @@ export function HamburgerMenu() {
               </button>
             </div>
 
-            {panel === "root" && (
-              <div className="pb-6">
+            <div className="pb-6">
                 <SectionHeader>Account</SectionHeader>
                 <Row icon={<UserCog size={16} />} label="Account Type">
                   <Segmented
@@ -172,9 +159,10 @@ export function HamburgerMenu() {
                 <Row icon={<Lock size={16} />} label="Private Account">
                   <Toggle checked={isPrivate} disabled={busy} onChange={togglePrivacy} />
                 </Row>
-                <Row icon={<Ban size={16} />} label="Blocked Users" onClick={() => setPanel("blocked")}>
-                  <ChevronRight size={16} className="text-muted-foreground" />
-                </Row>
+                <Row icon={<Ban size={16} />} label="Blocked Users" />
+                <div className="px-4 pb-3">
+                  <BlockedUsers meId={userId} />
+                </div>
 
                 <SectionHeader>Notifications</SectionHeader>
                 <Row icon={<MessageSquare size={16} />} label="New messages">
@@ -201,12 +189,36 @@ export function HamburgerMenu() {
                 </Row>
 
                 <SectionHeader>Content</SectionHeader>
-                <Row icon={<Sparkles size={16} />} label="Story Settings" onClick={() => setPanel("story")}>
-                  <ChevronRight size={16} className="text-muted-foreground" />
-                </Row>
-                <Row icon={<BookMarked size={16} />} label="Note Settings" onClick={() => setPanel("note")}>
-                  <ChevronRight size={16} className="text-muted-foreground" />
-                </Row>
+                <Link
+                  to="/stories/archive"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 px-4 min-h-[48px] border-b border-border/60 hover:bg-accent transition"
+                >
+                  <span className="text-muted-foreground">
+                    <Sparkles size={16} />
+                  </span>
+                  <span className="flex-1 text-sm text-foreground">Archived Stories</span>
+                </Link>
+                <Row icon={<Sparkles size={16} />} label="Story Settings" />
+                <p className="px-4 pb-2 text-[11px] text-muted-foreground">
+                  Choose your default story audience while sharing a Light Moment.
+                </p>
+                <Row icon={<BookMarked size={16} />} label="Note Settings" />
+                <p className="px-4 pb-2 text-[11px] text-muted-foreground">
+                  Notes are short 60-character thoughts. Visibility controls arrive with Notes.
+                </p>
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-3 px-4 min-h-[48px] border-b border-border/60 hover:bg-accent transition"
+                  >
+                    <span className="text-muted-foreground">
+                      <Shield size={16} />
+                    </span>
+                    <span className="flex-1 text-sm text-foreground">Admin dashboard</span>
+                  </Link>
+                )}
                 <Link
                   to="/takedown"
                   onClick={() => setOpen(false)}
@@ -216,7 +228,6 @@ export function HamburgerMenu() {
                     <Music size={16} />
                   </span>
                   <span className="flex-1 text-sm text-foreground">Music Takedown</span>
-                  <ChevronRight size={16} className="text-muted-foreground" />
                 </Link>
                 <Link
                   to="/account"
@@ -227,7 +238,6 @@ export function HamburgerMenu() {
                     <Download size={16} />
                   </span>
                   <span className="flex-1 text-sm text-foreground">Your data &amp; account</span>
-                  <ChevronRight size={16} className="text-muted-foreground" />
                 </Link>
                 <Link
                   to="/privacy"
@@ -238,7 +248,6 @@ export function HamburgerMenu() {
                     <Shield size={16} />
                   </span>
                   <span className="flex-1 text-sm text-foreground">Privacy Policy</span>
-                  <ChevronRight size={16} className="text-muted-foreground" />
                 </Link>
                 <Link
                   to="/terms"
@@ -249,7 +258,6 @@ export function HamburgerMenu() {
                     <FileText size={16} />
                   </span>
                   <span className="flex-1 text-sm text-foreground">Terms of Service</span>
-                  <ChevronRight size={16} className="text-muted-foreground" />
                 </Link>
 
                 <button
@@ -258,17 +266,6 @@ export function HamburgerMenu() {
                 >
                   <LogOut size={15} /> Log out
                 </button>
-              </div>
-            )}
-
-            <div className="p-4">
-              {panel === "blocked" && <BlockedUsers meId={userId} />}
-              {panel === "story" && (
-                <Placeholder title="Story Settings" body="Stories are coming to Lumen soon. You'll be able to choose who can view and reply to your stories here." />
-              )}
-              {panel === "note" && (
-                <Placeholder title="Note Settings" body="Notes let you share a short thought with friends. Visibility controls will live here." />
-              )}
             </div>
           </aside>
         </div>
@@ -368,17 +365,6 @@ function Toggle({
   );
 }
 
-function Placeholder({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="rounded-2xl border border-border bg-card p-5">
-      <p className="text-sm font-medium text-foreground">{title}</p>
-      <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{body}</p>
-      <p className="mt-3 inline-block rounded-full border border-border px-2.5 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-        Coming soon
-      </p>
-    </div>
-  );
-}
 
 function BlockedUsers({ meId }: { meId: string | null }) {
   const [rows, setRows] = useState<{ id: string; blocked_id: string; name: string | null }[]>([]);

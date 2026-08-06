@@ -31,7 +31,7 @@ export async function compressImage(file: File, maxSide = 1600, quality = 0.82):
 export async function uploadUserFile(
   userId: string,
   file: File,
-  folder: "avatars" | "posts" | "covers" | "chat",
+  folder: "avatars" | "posts" | "covers" | "chat" | "stories",
 ) {
   const isVideo = file.type.startsWith("video/");
   const limit = isVideo ? MAX_VIDEO_BYTES : MAX_UPLOAD_BYTES;
