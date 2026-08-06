@@ -18,7 +18,6 @@ export function StoriesBar({ meId }: { meId: string | null }) {
   const load = useCallback(async () => {
     if (!meId) return;
     const sb = supabase as any;
-    await sb.rpc("archive_expired_stories").catch?.(() => undefined);
     const [{ data: rows }, { data: seen }, { data: prof }] = await Promise.all([
       sb
         .from("stories")
