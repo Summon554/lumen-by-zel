@@ -25,12 +25,14 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { applyTheme, getStoredTheme, type Theme } from "@/lib/theme";
+import { useIsAdmin } from "@/lib/admin";
 
 type Panel = "root" | "blocked" | "story" | "note";
 type Prefs = { messages: boolean; reactions: boolean; follows: boolean };
 
 export function HamburgerMenu() {
   const navigate = useNavigate();
+  const { isAdmin } = useIsAdmin();
   const [open, setOpen] = useState(false);
   const [panel, setPanel] = useState<Panel>("root");
   const [userId, setUserId] = useState<string | null>(null);
