@@ -23,6 +23,7 @@ import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MessagesIndexRouteImport } from './routes/messages.index'
 import { Route as UIdRouteImport } from './routes/u.$id'
+import { Route as StoriesArchiveRouteImport } from './routes/stories.archive'
 import { Route as MessagesIdRouteImport } from './routes/messages.$id'
 import { Route as GuardianTokenRouteImport } from './routes/guardian.$token'
 
@@ -96,6 +97,11 @@ const UIdRoute = UIdRouteImport.update({
   path: '/u/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StoriesArchiveRoute = StoriesArchiveRouteImport.update({
+  id: '/stories/archive',
+  path: '/stories/archive',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MessagesIdRoute = MessagesIdRouteImport.update({
   id: '/messages/$id',
   path: '/messages/$id',
@@ -122,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/guardian/$token': typeof GuardianTokenRoute
   '/messages/$id': typeof MessagesIdRoute
+  '/stories/archive': typeof StoriesArchiveRoute
   '/u/$id': typeof UIdRoute
   '/messages/': typeof MessagesIndexRoute
 }
@@ -140,6 +147,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/guardian/$token': typeof GuardianTokenRoute
   '/messages/$id': typeof MessagesIdRoute
+  '/stories/archive': typeof StoriesArchiveRoute
   '/u/$id': typeof UIdRoute
   '/messages': typeof MessagesIndexRoute
 }
@@ -159,6 +167,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/guardian/$token': typeof GuardianTokenRoute
   '/messages/$id': typeof MessagesIdRoute
+  '/stories/archive': typeof StoriesArchiveRoute
   '/u/$id': typeof UIdRoute
   '/messages/': typeof MessagesIndexRoute
 }
@@ -179,6 +188,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/guardian/$token'
     | '/messages/$id'
+    | '/stories/archive'
     | '/u/$id'
     | '/messages/'
   fileRoutesByTo: FileRoutesByTo
@@ -197,6 +207,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/guardian/$token'
     | '/messages/$id'
+    | '/stories/archive'
     | '/u/$id'
     | '/messages'
   id:
@@ -215,6 +226,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/guardian/$token'
     | '/messages/$id'
+    | '/stories/archive'
     | '/u/$id'
     | '/messages/'
   fileRoutesById: FileRoutesById
@@ -234,6 +246,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   GuardianTokenRoute: typeof GuardianTokenRoute
   MessagesIdRoute: typeof MessagesIdRoute
+  StoriesArchiveRoute: typeof StoriesArchiveRoute
   UIdRoute: typeof UIdRoute
   MessagesIndexRoute: typeof MessagesIndexRoute
 }
@@ -338,6 +351,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/stories/archive': {
+      id: '/stories/archive'
+      path: '/stories/archive'
+      fullPath: '/stories/archive'
+      preLoaderRoute: typeof StoriesArchiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/messages/$id': {
       id: '/messages/$id'
       path: '/messages/$id'
@@ -370,6 +390,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   GuardianTokenRoute: GuardianTokenRoute,
   MessagesIdRoute: MessagesIdRoute,
+  StoriesArchiveRoute: StoriesArchiveRoute,
   UIdRoute: UIdRoute,
   MessagesIndexRoute: MessagesIndexRoute,
 }
