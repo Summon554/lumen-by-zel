@@ -4,8 +4,6 @@ import {
   Ban,
   BookMarked,
   Bell,
-  ChevronLeft,
-  ChevronRight,
   Download,
   FileText,
   Heart,
@@ -27,14 +25,12 @@ import { toast } from "sonner";
 import { applyTheme, getStoredTheme, type Theme } from "@/lib/theme";
 import { useIsAdmin } from "@/lib/admin";
 
-type Panel = "root" | "blocked" | "story" | "note";
 type Prefs = { messages: boolean; reactions: boolean; follows: boolean };
 
 export function HamburgerMenu() {
   const navigate = useNavigate();
   const { isAdmin } = useIsAdmin();
   const [open, setOpen] = useState(false);
-  const [panel, setPanel] = useState<Panel>("root");
   const [userId, setUserId] = useState<string | null>(null);
   const [theme, setTheme] = useState<Theme>("light");
   const [accountType, setAccountType] = useState<"personal" | "professional">("personal");
@@ -116,7 +112,6 @@ export function HamburgerMenu() {
     <>
       <button
         onClick={() => {
-          setPanel("root");
           setOpen(true);
         }}
         className="h-9 w-9 grid place-items-center rounded-full hover:bg-accent transition"
@@ -370,17 +365,6 @@ function Toggle({
   );
 }
 
-function Placeholder({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="rounded-2xl border border-border bg-card p-5">
-      <p className="text-sm font-medium text-foreground">{title}</p>
-      <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{body}</p>
-      <p className="mt-3 inline-block rounded-full border border-border px-2.5 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-        Coming soon
-      </p>
-    </div>
-  );
-}
 
 function BlockedUsers({ meId }: { meId: string | null }) {
   const [rows, setRows] = useState<{ id: string; blocked_id: string; name: string | null }[]>([]);
