@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_actions: {
+        Row: {
+          action_type: string
+          admin_email: string
+          admin_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          target_id: string | null
+        }
+        Insert: {
+          action_type: string
+          admin_email: string
+          admin_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          target_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_email?: string
+          admin_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          target_id?: string | null
+        }
+        Relationships: []
+      }
       appeals: {
         Row: {
           created_at: string
@@ -519,6 +549,7 @@ export type Database = {
           birthdate: string | null
           cover_url: string | null
           created_at: string
+          default_story_privacy: string
           deletion_requested_at: string | null
           email: string | null
           guardian_email: string | null
@@ -539,6 +570,7 @@ export type Database = {
           birthdate?: string | null
           cover_url?: string | null
           created_at?: string
+          default_story_privacy?: string
           deletion_requested_at?: string | null
           email?: string | null
           guardian_email?: string | null
@@ -559,6 +591,7 @@ export type Database = {
           birthdate?: string | null
           cover_url?: string | null
           created_at?: string
+          default_story_privacy?: string
           deletion_requested_at?: string | null
           email?: string | null
           guardian_email?: string | null
@@ -656,6 +689,86 @@ export type Database = {
           },
         ]
       }
+      stories: {
+        Row: {
+          archived: boolean
+          background: string | null
+          created_at: string
+          custom_audience: string[]
+          expires_at: string
+          held_for_moderation: boolean
+          id: string
+          kind: string
+          media_url: string | null
+          music: Json | null
+          privacy: string
+          stickers: Json
+          text_content: string | null
+          user_id: string
+        }
+        Insert: {
+          archived?: boolean
+          background?: string | null
+          created_at?: string
+          custom_audience?: string[]
+          expires_at?: string
+          held_for_moderation?: boolean
+          id?: string
+          kind?: string
+          media_url?: string | null
+          music?: Json | null
+          privacy?: string
+          stickers?: Json
+          text_content?: string | null
+          user_id: string
+        }
+        Update: {
+          archived?: boolean
+          background?: string | null
+          created_at?: string
+          custom_audience?: string[]
+          expires_at?: string
+          held_for_moderation?: boolean
+          id?: string
+          kind?: string
+          media_url?: string | null
+          music?: Json | null
+          privacy?: string
+          stickers?: Json
+          text_content?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      story_views: {
+        Row: {
+          created_at: string
+          id: string
+          story_id: string
+          viewer_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          story_id: string
+          viewer_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          story_id?: string
+          viewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_views_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       strikes: {
         Row: {
           created_at: string
@@ -743,15 +856,44 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      archive_expired_stories: { Args: never; Returns: undefined }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -878,6 +1020,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
