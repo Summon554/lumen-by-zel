@@ -22,6 +22,7 @@ import { ReactionBar } from "@/components/ReactionBar";
 import { UserActionMenu } from "@/components/UserActionMenu";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { DailyHighlight } from "@/components/DailyHighlight";
+import { StoriesBar } from "@/components/StoriesBar";
 import { EmptyState } from "@/components/EmptyState";
 import { LumenAvatar } from "@/components/LumenAvatar";
 import { MediaViewer, type ViewerMedia } from "@/components/MediaViewer";
@@ -475,6 +476,7 @@ function HomePage() {
       </header>
 
       <div className="max-w-lg mx-auto px-4 pt-5 space-y-5">
+        <StoriesBar meId={userId} />
         <DailyHighlight />
 
         <form
