@@ -8,7 +8,7 @@ export const LEGAL_VERSIONS = {
 export type DocKind = keyof typeof LEGAL_VERSIONS;
 
 export const INDEPENDENCE_DISCLAIMER =
-  "Lumen is an independent community app. It is not affiliated with, endorsed by, or connected to Jehovah's Witnesses, the Watch Tower Bible and Tract Society, or any religious organisation. Scripture quotations are from the World English Bible, a public-domain translation. Tags such as \"Kingdom Hall\" are generic labels chosen by members, not official branding.";
+  "Lumen is a standalone, independent platform and is not affiliated with or representing any organization.";
 
 export const LEGAL_CONTACT = "hello@lumen.app";
 
