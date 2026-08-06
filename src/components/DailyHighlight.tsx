@@ -1,13 +1,13 @@
 import { useMemo } from "react";
-import { BookOpen } from "lucide-react";
-import { verseOfTheDay } from "@/lib/verses";
+import { Sparkles } from "lucide-react";
+import { highlightOfTheDay } from "@/lib/highlights";
 
-/** Daily Verse card — deliberately not styled like a post. */
-export function DailyVerse() {
-  const verse = useMemo(() => verseOfTheDay(), []);
+/** Daily Highlight card — inspiration / announcement slot, deliberately not styled like a post. */
+export function DailyHighlight() {
+  const highlight = useMemo(() => highlightOfTheDay(), []);
   return (
     <section
-      aria-label="Daily verse"
+      aria-label="Daily highlight"
       className="relative overflow-hidden rounded-3xl p-5 text-primary-foreground"
       style={{ background: "var(--gradient-glow)", boxShadow: "var(--shadow-glow)" }}
     >
@@ -15,12 +15,12 @@ export function DailyVerse() {
       <div className="absolute -bottom-10 -left-4 h-24 w-24 rounded-full bg-white/20 blur-2xl animate-float" />
       <div className="relative">
         <p className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] opacity-90">
-          <BookOpen size={12} /> Daily Verse
+          <Sparkles size={12} /> Daily Highlight
         </p>
         <blockquote className="mt-2 text-[15px] leading-relaxed font-medium">
-          “{verse.text}”
+          “{highlight.text}”
         </blockquote>
-        <p className="mt-2 text-xs opacity-90">— {verse.ref}</p>
+        <p className="mt-2 text-xs opacity-90">— {highlight.source}</p>
       </div>
     </section>
   );
