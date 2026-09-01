@@ -35,7 +35,10 @@ export const requestGuardianVerification = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message);
 
-    return { token };
+    // The token is never returned to the caller: the account holder may be the
+    // minor themselves, and handing them the link would let them self-verify.
+    // Only the guardian receives it, by email.
+    return { sent: true as const, guardianEmail: data.guardianEmail };
   });
 
 /** Public: a guardian clicking their emailed link confirms the minor's account. */

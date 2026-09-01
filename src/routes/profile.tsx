@@ -2,8 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Camera, ImagePlus, Sparkles } from "lucide-react";
-import { getSignedUrl, getSignedUrls, uploadUserFile } from "@/lib/storage";
+import { ArrowLeft, Camera, ImagePlus, Play, Sparkles } from "lucide-react";
+import { getSignedUrl, getSignedUrls, uploadUserFile, isVideoPath } from "@/lib/storage";
 import { isFounder } from "@/lib/founder";
 import { FounderBadge } from "@/components/FounderBadge";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
@@ -404,13 +404,29 @@ function ProfilePage() {
             <div className="grid grid-cols-3 gap-1.5">
               {source.map((p) => {
                 const url = p.image_url ? urls[p.image_url] : null;
+                const video = isVideoPath(p.image_url);
                 return (
                   <div
                     key={p.id}
-                    className="aspect-square rounded-lg overflow-hidden bg-card border border-border grid place-items-center"
+                    className="relative aspect-square rounded-lg overflow-hidden bg-card border border-border grid place-items-center"
                   >
-                    {url ? (
-                      <img src={url} alt="" className="h-full w-full object-cover" />
+                    {url && video ? (
+                      <>
+                        <video
+                          src={url}
+                          className="h-full w-full object-cover"
+                          muted
+                          playsInline
+                          preload="metadata"
+                        />
+                        <span className="pointer-events-none absolute inset-0 grid place-items-center">
+                          <span className="grid h-8 w-8 place-items-center rounded-full bg-background/70 text-primary">
+                            <Play size={14} />
+                          </span>
+                        </span>
+                      </>
+                    ) : url ? (
+                      <img src={url} alt="" loading="lazy" className="h-full w-full object-cover" />
                     ) : (
                       <p className="text-[10px] text-muted-foreground p-2 text-center line-clamp-6">
                         {p.caption ?? ""}

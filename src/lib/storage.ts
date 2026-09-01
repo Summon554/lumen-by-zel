@@ -64,3 +64,8 @@ export async function getSignedUrls(paths: string[], expiresIn = 3600): Promise<
   });
   return map;
 }
+
+const VIDEO_RE = /\.(mp4|webm|mov|m4v)$/i;
+
+/** True when a stored media path points at a video rather than a photo. */
+export const isVideoPath = (path?: string | null) => !!path && VIDEO_RE.test(path);
