@@ -249,8 +249,9 @@ function AccountPage() {
                     </form>
                     {guardianLink && (
                       <p className="mt-2 break-all text-[11px] text-muted-foreground">
-                        Email delivery activates once Lumen's sender domain is verified. In the meantime,
-                        give your guardian this link: <span className="text-foreground">{guardianLink}</span>
+                        A confirmation link is on its way to{" "}
+                        <span className="text-foreground">{guardianLink}</span>. Only your parent or
+                        guardian can open it — ask them to check their inbox.
                       </p>
                     )}
                   </>
