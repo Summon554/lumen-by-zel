@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowLeft, Camera, ImagePlus, Sparkles } from "lucide-react";
-import { getSignedUrl, getSignedUrls, uploadUserFile } from "@/lib/storage";
+import { getSignedUrl, getSignedUrls, uploadUserFile, isVideoPath } from "@/lib/storage";
 import { isFounder } from "@/lib/founder";
 import { FounderBadge } from "@/components/FounderBadge";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
