@@ -132,9 +132,9 @@ function AccountPage() {
     e.preventDefault();
     setBusy(true);
     try {
-      const { token } = await requestGuardianVerification({ data: { guardianEmail } });
-      setGuardianLink(`${window.location.origin}/guardian/${token}`);
-      toast.success("Verification link created.");
+      const res = await requestGuardianVerification({ data: { guardianEmail } });
+      setGuardianLink(res.guardianEmail);
+      toast.success("Verification request sent to your parent or guardian.");
     } catch (err) {
       toast.error((err as Error).message);
     }
