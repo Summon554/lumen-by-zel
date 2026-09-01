@@ -2,8 +2,8 @@ import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-r
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Sparkles } from "lucide-react";
-import { getSignedUrl, getSignedUrls } from "@/lib/storage";
+import { ArrowLeft, Play, Sparkles } from "lucide-react";
+import { getSignedUrl, getSignedUrls, isVideoPath } from "@/lib/storage";
 import { FounderBadge } from "@/components/FounderBadge";
 import { UserActionMenu } from "@/components/UserActionMenu";
 import { PresenceDot } from "@/components/PresenceDot";
