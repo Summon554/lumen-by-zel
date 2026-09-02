@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   Ban,
@@ -127,7 +128,7 @@ export function HamburgerMenu() {
         <Menu size={20} />
       </button>
 
-      {open && (
+      {open && createPortal(
         <div className="fixed inset-0 z-50 flex">
           <div
             className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
@@ -236,7 +237,8 @@ export function HamburgerMenu() {
               <p className="px-4 pt-1 text-[10px] text-muted-foreground">Quiet hours 10PM–6AM respected.</p>
             </div>
           </aside>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
