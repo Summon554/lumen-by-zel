@@ -134,7 +134,7 @@ export function HamburgerMenu() {
             onClick={() => setOpen(false)}
             aria-hidden
           />
-          <aside className="relative flex max-h-screen w-[88%] max-w-sm flex-col overflow-y-auto border-r border-border bg-card text-foreground shadow-2xl">
+          <aside className="relative flex h-screen w-[88%] max-w-sm flex-col overflow-y-auto border-r border-border bg-card text-foreground shadow-2xl">
             <div className="flex items-center justify-between border-b border-border bg-card px-3 py-2">
               <span className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
                 <Sparkles size={15} className="text-primary" /> Settings
