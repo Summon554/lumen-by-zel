@@ -251,7 +251,7 @@ function LinkRow({
   label,
   onDone,
 }: {
-  to: string;
+  to: "/stories/archive" | "/takedown" | "/account" | "/admin";
   icon: React.ReactNode;
   label: string;
   onDone: () => void;
@@ -352,7 +352,7 @@ function Toggle({
 }
 
 
-function BlockedUsers({ meId }: { meId: string | null }) {
+function BlockedUsers({ meId, onCount }: { meId: string | null; onCount: (n: number) => void }) {
   const [rows, setRows] = useState<{ id: string; blocked_id: string; name: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -370,6 +370,7 @@ function BlockedUsers({ meId }: { meId: string | null }) {
         (profs ?? []).forEach((p) => (names[p.id] = p.name));
       }
       setRows(list.map((b) => ({ ...b, name: names[b.blocked_id] ?? null })));
+      onCount(list.length);
       setLoading(false);
     })();
   }, [meId]);
@@ -380,7 +381,11 @@ function BlockedUsers({ meId }: { meId: string | null }) {
       toast.error(error.message);
       return;
     }
-    setRows((r) => r.filter((x) => x.id !== id));
+    setRows((r) => {
+      const next = r.filter((x) => x.id !== id);
+      onCount(next.length);
+      return next;
+    });
     toast.success("Unblocked");
   }
 
