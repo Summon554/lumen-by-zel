@@ -37,6 +37,8 @@ export function HamburgerMenu() {
   const [isPrivate, setIsPrivate] = useState(false);
   const [prefs, setPrefs] = useState<Prefs>({ messages: true, reactions: true, follows: true });
   const [busy, setBusy] = useState(false);
+  const [showBlocked, setShowBlocked] = useState(false);
+  const [blockedCount, setBlockedCount] = useState<number | null>(null);
 
   useEffect(() => {
     setTheme(getStoredTheme());
