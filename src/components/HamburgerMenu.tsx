@@ -239,9 +239,32 @@ export function HamburgerMenu() {
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
-    <p className="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+    <p className="px-4 pt-2 pb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
       {children}
     </p>
+  );
+}
+
+function LinkRow({
+  to,
+  icon,
+  label,
+  onDone,
+}: {
+  to: string;
+  icon: React.ReactNode;
+  label: string;
+  onDone: () => void;
+}) {
+  return (
+    <Link
+      to={to}
+      onClick={onDone}
+      className="flex min-h-[40px] items-center gap-3 border-b border-border/60 px-4 hover:bg-accent transition"
+    >
+      <span className="shrink-0 text-muted-foreground">{icon}</span>
+      <span className="min-w-0 flex-1 truncate text-sm text-foreground">{label}</span>
+    </Link>
   );
 }
 
@@ -259,7 +282,7 @@ function Row({
   const inner = (
     <>
       <span className="text-muted-foreground shrink-0">{icon}</span>
-      <span className="flex-1 text-sm text-foreground truncate">{label}</span>
+      <span className="min-w-0 flex-1 text-sm text-foreground truncate">{label}</span>
       {children}
     </>
   );
@@ -267,13 +290,13 @@ function Row({
     return (
       <button
         onClick={onClick}
-        className="w-full flex items-center gap-3 px-4 min-h-[48px] border-b border-border/60 text-left hover:bg-accent transition"
+        className="w-full flex items-center gap-3 px-4 min-h-[40px] border-b border-border/60 text-left hover:bg-accent transition"
       >
         {inner}
       </button>
     );
   }
-  return <div className="flex items-center gap-3 px-4 min-h-[48px] border-b border-border/60">{inner}</div>;
+  return <div className="flex items-center gap-3 px-4 min-h-[40px] border-b border-border/60">{inner}</div>;
 }
 
 function Segmented({
