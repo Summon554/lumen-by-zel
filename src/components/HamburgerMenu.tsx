@@ -127,145 +127,106 @@ export function HamburgerMenu() {
             onClick={() => setOpen(false)}
             aria-hidden
           />
-          <aside className="relative h-auto min-h-full w-[88%] max-w-sm border-r border-border bg-card text-foreground shadow-2xl">
-            <div className="flex items-center justify-between border-b border-border bg-card px-3 py-2.5">
+          <aside className="relative flex max-h-screen w-[88%] max-w-sm flex-col overflow-y-auto border-r border-border bg-card text-foreground shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border bg-card px-3 py-2">
               <span className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
                 <Sparkles size={15} className="text-primary" /> Settings
               </span>
               <button
                 onClick={() => setOpen(false)}
-                className="h-8 w-8 grid place-items-center rounded-full hover:bg-accent transition"
+                className="h-7 w-7 grid place-items-center rounded-full hover:bg-accent transition"
                 aria-label="Close menu"
               >
                 <X size={16} />
               </button>
             </div>
 
-            <div className="pb-6">
-                <SectionHeader>Account</SectionHeader>
-                <Row icon={<UserCog size={16} />} label="Account Type">
-                  <Segmented
-                    value={accountType}
-                    disabled={busy}
-                    options={[
-                      ["personal", "Personal"],
-                      ["professional", "Pro"],
-                    ]}
-                    onChange={(v) => changeAccountType(v as "personal" | "professional")}
-                  />
-                </Row>
+            <div className="pb-3">
+              <SectionHeader>Account</SectionHeader>
+              <Row icon={<UserCog size={15} />} label="Account Type">
+                <Segmented
+                  value={accountType}
+                  disabled={busy}
+                  options={[
+                    ["personal", "Personal"],
+                    ["professional", "Pro"],
+                  ]}
+                  onChange={(v) => changeAccountType(v as "personal" | "professional")}
+                />
+              </Row>
 
-                <SectionHeader>Privacy</SectionHeader>
-                <Row icon={<Lock size={16} />} label="Private Account">
-                  <Toggle checked={isPrivate} disabled={busy} onChange={togglePrivacy} />
-                </Row>
-                <Row icon={<Ban size={16} />} label="Blocked Users" />
-                <div className="px-4 pb-3">
-                  <BlockedUsers meId={userId} />
+              <SectionHeader>Privacy</SectionHeader>
+              <Row icon={<Lock size={15} />} label="Private Account">
+                <Toggle checked={isPrivate} disabled={busy} onChange={togglePrivacy} />
+              </Row>
+              <Row
+                icon={<Ban size={15} />}
+                label={`Blocked Users${blockedCount === null ? "" : ` · ${blockedCount}`}`}
+                onClick={() => setShowBlocked((s) => !s)}
+              />
+              {showBlocked && (
+                <div className="px-4 py-2">
+                  <BlockedUsers meId={userId} onCount={setBlockedCount} />
                 </div>
+              )}
 
-                <SectionHeader>Notifications</SectionHeader>
-                <Row icon={<MessageSquare size={16} />} label="New messages">
-                  <Toggle checked={prefs.messages} onChange={(v) => updatePref("messages", v)} />
-                </Row>
-                <Row icon={<Heart size={16} />} label="Reactions">
-                  <Toggle checked={prefs.reactions} onChange={(v) => updatePref("reactions", v)} />
-                </Row>
-                <Row icon={<UserPlus size={16} />} label="New followers">
-                  <Toggle checked={prefs.follows} onChange={(v) => updatePref("follows", v)} />
-                </Row>
-                <p className="px-4 pb-1 text-[11px] text-muted-foreground">Quiet hours 10PM–6AM always respected.</p>
+              <SectionHeader>Notifications</SectionHeader>
+              <Row icon={<MessageSquare size={15} />} label="New messages">
+                <Toggle checked={prefs.messages} onChange={(v) => updatePref("messages", v)} />
+              </Row>
+              <Row icon={<Heart size={15} />} label="Reactions">
+                <Toggle checked={prefs.reactions} onChange={(v) => updatePref("reactions", v)} />
+              </Row>
+              <Row icon={<UserPlus size={15} />} label="New followers">
+                <Toggle checked={prefs.follows} onChange={(v) => updatePref("follows", v)} />
+              </Row>
 
-                <SectionHeader>Appearance</SectionHeader>
-                <Row icon={theme === "dark" ? <Moon size={16} /> : <Sun size={16} />} label="Theme">
-                  <Segmented
-                    value={theme}
-                    options={[
-                      ["light", "Light"],
-                      ["dark", "Dark"],
-                    ]}
-                    onChange={(v) => switchTheme(v as Theme)}
-                  />
-                </Row>
+              <SectionHeader>Appearance</SectionHeader>
+              <Row icon={theme === "dark" ? <Moon size={15} /> : <Sun size={15} />} label="Theme">
+                <Segmented
+                  value={theme}
+                  options={[
+                    ["light", "Light"],
+                    ["dark", "Dark"],
+                  ]}
+                  onChange={(v) => switchTheme(v as Theme)}
+                />
+              </Row>
 
-                <SectionHeader>Content</SectionHeader>
-                <Link
-                  to="/stories/archive"
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 px-4 min-h-[48px] border-b border-border/60 hover:bg-accent transition"
-                >
-                  <span className="text-muted-foreground">
-                    <Sparkles size={16} />
-                  </span>
-                  <span className="flex-1 text-sm text-foreground">Archived Stories</span>
-                </Link>
-                <Row icon={<Sparkles size={16} />} label="Story Settings" />
-                <p className="px-4 pb-2 text-[11px] text-muted-foreground">
-                  Choose your default story audience while sharing a Light Moment.
-                </p>
-                <Row icon={<BookMarked size={16} />} label="Note Settings" />
-                <p className="px-4 pb-2 text-[11px] text-muted-foreground">
-                  Notes are short 60-character thoughts. Visibility controls arrive with Notes.
-                </p>
-                {isAdmin && (
-                  <Link
-                    to="/admin"
-                    onClick={() => setOpen(false)}
-                    className="flex items-center gap-3 px-4 min-h-[48px] border-b border-border/60 hover:bg-accent transition"
-                  >
-                    <span className="text-muted-foreground">
-                      <Shield size={16} />
-                    </span>
-                    <span className="flex-1 text-sm text-foreground">Admin dashboard</span>
-                  </Link>
-                )}
-                <Link
-                  to="/takedown"
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 px-4 min-h-[48px] border-b border-border/60 hover:bg-accent transition"
-                >
-                  <span className="text-muted-foreground">
-                    <Music size={16} />
-                  </span>
-                  <span className="flex-1 text-sm text-foreground">Music Takedown</span>
-                </Link>
-                <Link
-                  to="/account"
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 px-4 min-h-[48px] border-b border-border/60 hover:bg-accent transition"
-                >
-                  <span className="text-muted-foreground">
-                    <Download size={16} />
-                  </span>
-                  <span className="flex-1 text-sm text-foreground">Your data &amp; account</span>
-                </Link>
+              <SectionHeader>Content</SectionHeader>
+              <LinkRow to="/stories/archive" icon={<Sparkles size={15} />} label="Archived Stories" onDone={() => setOpen(false)} />
+              <Row icon={<Sparkles size={15} />} label="Story Settings" />
+              <Row icon={<BookMarked size={15} />} label="Note Settings" />
+              <LinkRow to="/takedown" icon={<Music size={15} />} label="Music Takedown" onDone={() => setOpen(false)} />
+              <LinkRow to="/account" icon={<Download size={15} />} label="Your data &amp; account" onDone={() => setOpen(false)} />
+              {isAdmin && (
+                <LinkRow to="/admin" icon={<Shield size={15} />} label="Admin dashboard" onDone={() => setOpen(false)} />
+              )}
+              <div className="grid grid-cols-2 border-b border-border/60 text-sm">
                 <Link
                   to="/privacy"
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 px-4 min-h-[48px] border-b border-border/60 hover:bg-accent transition"
+                  className="flex min-h-[40px] items-center gap-2 px-4 text-foreground hover:bg-accent transition"
                 >
-                  <span className="text-muted-foreground">
-                    <Shield size={16} />
-                  </span>
-                  <span className="flex-1 text-sm text-foreground">Privacy Policy</span>
+                  <Shield size={15} className="shrink-0 text-muted-foreground" />
+                  <span className="truncate">Privacy</span>
                 </Link>
                 <Link
                   to="/terms"
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 px-4 min-h-[48px] border-b border-border/60 hover:bg-accent transition"
+                  className="flex min-h-[40px] items-center gap-2 border-l border-border/60 px-4 text-foreground hover:bg-accent transition"
                 >
-                  <span className="text-muted-foreground">
-                    <FileText size={16} />
-                  </span>
-                  <span className="flex-1 text-sm text-foreground">Terms of Service</span>
+                  <FileText size={15} className="shrink-0 text-muted-foreground" />
+                  <span className="truncate">Terms</span>
                 </Link>
-
-                <button
-                  onClick={handleLogout}
-                  className="mt-3 mx-4 w-[calc(100%-2rem)] rounded-full border border-border px-4 py-2.5 flex items-center justify-center gap-2 text-sm font-medium text-destructive hover:bg-accent transition"
-                >
-                  <LogOut size={15} /> Log out
-                </button>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="flex w-full min-h-[40px] items-center gap-3 px-4 text-left text-sm font-medium text-destructive hover:bg-accent transition"
+              >
+                <LogOut size={15} className="shrink-0" /> Log out
+              </button>
+              <p className="px-4 pt-1 text-[11px] text-muted-foreground">Quiet hours 10PM–6AM always respected.</p>
             </div>
           </aside>
         </div>
