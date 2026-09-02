@@ -148,7 +148,7 @@ export function HamburgerMenu() {
               </button>
             </div>
 
-            <div className="pb-3">
+            <div className="pb-2">
               <SectionHeader>Account</SectionHeader>
               <Row icon={<UserCog size={15} />} label="Account Type">
                 <Segmented
@@ -213,7 +213,7 @@ export function HamburgerMenu() {
                 <Link
                   to="/privacy"
                   onClick={() => setOpen(false)}
-                  className="flex min-h-[40px] items-center gap-2 px-4 text-foreground hover:bg-accent transition"
+                  className="flex min-h-[36px] items-center gap-2 px-4 text-foreground hover:bg-accent transition"
                 >
                   <Shield size={15} className="shrink-0 text-muted-foreground" />
                   <span className="truncate">Privacy</span>
@@ -221,7 +221,7 @@ export function HamburgerMenu() {
                 <Link
                   to="/terms"
                   onClick={() => setOpen(false)}
-                  className="flex min-h-[40px] items-center gap-2 border-l border-border/60 px-4 text-foreground hover:bg-accent transition"
+                  className="flex min-h-[36px] items-center gap-2 border-l border-border/60 px-4 text-foreground hover:bg-accent transition"
                 >
                   <FileText size={15} className="shrink-0 text-muted-foreground" />
                   <span className="truncate">Terms</span>
@@ -229,11 +229,11 @@ export function HamburgerMenu() {
               </div>
               <button
                 onClick={handleLogout}
-                className="flex w-full min-h-[40px] items-center gap-3 px-4 text-left text-sm font-medium text-destructive hover:bg-accent transition"
+                className="flex w-full min-h-[36px] items-center gap-3 px-4 text-left text-sm font-medium text-destructive hover:bg-accent transition"
               >
                 <LogOut size={15} className="shrink-0" /> Log out
               </button>
-              <p className="px-4 pt-1 text-[11px] text-muted-foreground">Quiet hours 10PM–6AM always respected.</p>
+              <p className="px-4 pt-1 text-[10px] text-muted-foreground">Quiet hours 10PM–6AM respected.</p>
             </div>
           </aside>
         </div>
@@ -244,7 +244,7 @@ export function HamburgerMenu() {
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
-    <p className="px-4 pt-2 pb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+    <p className="px-4 pt-1.5 pb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
       {children}
     </p>
   );
@@ -265,7 +265,7 @@ function LinkRow({
     <Link
       to={to}
       onClick={onDone}
-      className="flex min-h-[40px] items-center gap-3 border-b border-border/60 px-4 hover:bg-accent transition"
+      className="flex min-h-[36px] items-center gap-3 border-b border-border/60 px-4 hover:bg-accent transition"
     >
       <span className="shrink-0 text-muted-foreground">{icon}</span>
       <span className="min-w-0 flex-1 truncate text-sm text-foreground">{label}</span>
@@ -295,13 +295,13 @@ function Row({
     return (
       <button
         onClick={onClick}
-        className="w-full flex items-center gap-3 px-4 min-h-[40px] border-b border-border/60 text-left hover:bg-accent transition"
+        className="w-full flex items-center gap-3 px-4 min-h-[36px] border-b border-border/60 text-left hover:bg-accent transition"
       >
         {inner}
       </button>
     );
   }
-  return <div className="flex items-center gap-3 px-4 min-h-[40px] border-b border-border/60">{inner}</div>;
+  return <div className="flex items-center gap-3 px-4 min-h-[36px] border-b border-border/60">{inner}</div>;
 }
 
 function Segmented({
