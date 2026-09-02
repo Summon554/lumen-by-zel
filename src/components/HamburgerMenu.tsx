@@ -50,16 +50,21 @@ export function HamburgerMenu() {
       const { data } = await supabase.auth.getUser();
       if (!data.user) return;
       setUserId(data.user.id);
-      const [{ data: profile }, { data: pref }] = await Promise.all([
+      const [{ data: profile }, { data: pref }, { count }] = await Promise.all([
         supabase.from("profiles").select("account_type,is_private").eq("id", data.user.id).maybeSingle(),
         (supabase as any)
           .from("notification_prefs")
           .select("messages,reactions,follows")
           .eq("user_id", data.user.id)
           .maybeSingle(),
+        (supabase as any)
+          .from("blocks")
+          .select("id", { count: "exact", head: true })
+          .eq("blocker_id", data.user.id),
       ]);
       setAccountType((profile as any)?.account_type === "professional" ? "professional" : "personal");
       setIsPrivate(Boolean((profile as any)?.is_private));
+      setBlockedCount(typeof count === "number" ? count : 0);
       if (pref) setPrefs(pref as Prefs);
     })();
   }, [open, userId]);
