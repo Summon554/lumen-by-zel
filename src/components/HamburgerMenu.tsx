@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   Ban,
@@ -37,6 +38,8 @@ export function HamburgerMenu() {
   const [isPrivate, setIsPrivate] = useState(false);
   const [prefs, setPrefs] = useState<Prefs>({ messages: true, reactions: true, follows: true });
   const [busy, setBusy] = useState(false);
+  const [showBlocked, setShowBlocked] = useState(false);
+  const [blockedCount, setBlockedCount] = useState<number | null>(null);
 
   useEffect(() => {
     setTheme(getStoredTheme());
@@ -48,16 +51,21 @@ export function HamburgerMenu() {
       const { data } = await supabase.auth.getUser();
       if (!data.user) return;
       setUserId(data.user.id);
-      const [{ data: profile }, { data: pref }] = await Promise.all([
+      const [{ data: profile }, { data: pref }, { count }] = await Promise.all([
         supabase.from("profiles").select("account_type,is_private").eq("id", data.user.id).maybeSingle(),
         (supabase as any)
           .from("notification_prefs")
           .select("messages,reactions,follows")
           .eq("user_id", data.user.id)
           .maybeSingle(),
+        (supabase as any)
+          .from("blocks")
+          .select("id", { count: "exact", head: true })
+          .eq("blocker_id", data.user.id),
       ]);
       setAccountType((profile as any)?.account_type === "professional" ? "professional" : "personal");
       setIsPrivate(Boolean((profile as any)?.is_private));
+      setBlockedCount(typeof count === "number" ? count : 0);
       if (pref) setPrefs(pref as Prefs);
     })();
   }, [open, userId]);
@@ -120,155 +128,117 @@ export function HamburgerMenu() {
         <Menu size={20} />
       </button>
 
-      {open && (
+      {open && createPortal(
         <div className="fixed inset-0 z-50 flex">
           <div
             className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
             onClick={() => setOpen(false)}
             aria-hidden
           />
-          <aside className="relative h-auto min-h-full w-[88%] max-w-sm border-r border-border bg-card text-foreground shadow-2xl">
-            <div className="flex items-center justify-between border-b border-border bg-card px-3 py-2.5">
+          <aside className="relative flex h-screen w-[88%] max-w-sm flex-col overflow-y-auto border-r border-border bg-card text-foreground shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border bg-card px-3 py-2">
               <span className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
                 <Sparkles size={15} className="text-primary" /> Settings
               </span>
               <button
                 onClick={() => setOpen(false)}
-                className="h-8 w-8 grid place-items-center rounded-full hover:bg-accent transition"
+                className="h-7 w-7 grid place-items-center rounded-full hover:bg-accent transition"
                 aria-label="Close menu"
               >
                 <X size={16} />
               </button>
             </div>
 
-            <div className="pb-6">
-                <SectionHeader>Account</SectionHeader>
-                <Row icon={<UserCog size={16} />} label="Account Type">
-                  <Segmented
-                    value={accountType}
-                    disabled={busy}
-                    options={[
-                      ["personal", "Personal"],
-                      ["professional", "Pro"],
-                    ]}
-                    onChange={(v) => changeAccountType(v as "personal" | "professional")}
-                  />
-                </Row>
+            <div className="pb-2">
+              <SectionHeader>Account</SectionHeader>
+              <Row icon={<UserCog size={15} />} label="Account Type">
+                <Segmented
+                  value={accountType}
+                  disabled={busy}
+                  options={[
+                    ["personal", "Personal"],
+                    ["professional", "Pro"],
+                  ]}
+                  onChange={(v) => changeAccountType(v as "personal" | "professional")}
+                />
+              </Row>
 
-                <SectionHeader>Privacy</SectionHeader>
-                <Row icon={<Lock size={16} />} label="Private Account">
-                  <Toggle checked={isPrivate} disabled={busy} onChange={togglePrivacy} />
-                </Row>
-                <Row icon={<Ban size={16} />} label="Blocked Users" />
-                <div className="px-4 pb-3">
-                  <BlockedUsers meId={userId} />
+              <SectionHeader>Privacy</SectionHeader>
+              <Row icon={<Lock size={15} />} label="Private Account">
+                <Toggle checked={isPrivate} disabled={busy} onChange={togglePrivacy} />
+              </Row>
+              <Row
+                icon={<Ban size={15} />}
+                label={`Blocked Users${blockedCount === null ? "" : ` · ${blockedCount}`}`}
+                onClick={() => setShowBlocked((s) => !s)}
+              />
+              {showBlocked && (
+                <div className="px-4 py-2">
+                  <BlockedUsers meId={userId} onCount={setBlockedCount} />
                 </div>
+              )}
 
-                <SectionHeader>Notifications</SectionHeader>
-                <Row icon={<MessageSquare size={16} />} label="New messages">
-                  <Toggle checked={prefs.messages} onChange={(v) => updatePref("messages", v)} />
-                </Row>
-                <Row icon={<Heart size={16} />} label="Reactions">
-                  <Toggle checked={prefs.reactions} onChange={(v) => updatePref("reactions", v)} />
-                </Row>
-                <Row icon={<UserPlus size={16} />} label="New followers">
-                  <Toggle checked={prefs.follows} onChange={(v) => updatePref("follows", v)} />
-                </Row>
-                <p className="px-4 pb-1 text-[11px] text-muted-foreground">Quiet hours 10PM–6AM always respected.</p>
+              <SectionHeader>Notifications</SectionHeader>
+              <Row icon={<MessageSquare size={15} />} label="New messages">
+                <Toggle checked={prefs.messages} onChange={(v) => updatePref("messages", v)} />
+              </Row>
+              <Row icon={<Heart size={15} />} label="Reactions">
+                <Toggle checked={prefs.reactions} onChange={(v) => updatePref("reactions", v)} />
+              </Row>
+              <Row icon={<UserPlus size={15} />} label="New followers">
+                <Toggle checked={prefs.follows} onChange={(v) => updatePref("follows", v)} />
+              </Row>
 
-                <SectionHeader>Appearance</SectionHeader>
-                <Row icon={theme === "dark" ? <Moon size={16} /> : <Sun size={16} />} label="Theme">
-                  <Segmented
-                    value={theme}
-                    options={[
-                      ["light", "Light"],
-                      ["dark", "Dark"],
-                    ]}
-                    onChange={(v) => switchTheme(v as Theme)}
-                  />
-                </Row>
+              <SectionHeader>Appearance</SectionHeader>
+              <Row icon={theme === "dark" ? <Moon size={15} /> : <Sun size={15} />} label="Theme">
+                <Segmented
+                  value={theme}
+                  options={[
+                    ["light", "Light"],
+                    ["dark", "Dark"],
+                  ]}
+                  onChange={(v) => switchTheme(v as Theme)}
+                />
+              </Row>
 
-                <SectionHeader>Content</SectionHeader>
-                <Link
-                  to="/stories/archive"
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 px-4 min-h-[48px] border-b border-border/60 hover:bg-accent transition"
-                >
-                  <span className="text-muted-foreground">
-                    <Sparkles size={16} />
-                  </span>
-                  <span className="flex-1 text-sm text-foreground">Archived Stories</span>
-                </Link>
-                <Row icon={<Sparkles size={16} />} label="Story Settings" />
-                <p className="px-4 pb-2 text-[11px] text-muted-foreground">
-                  Choose your default story audience while sharing a Light Moment.
-                </p>
-                <Row icon={<BookMarked size={16} />} label="Note Settings" />
-                <p className="px-4 pb-2 text-[11px] text-muted-foreground">
-                  Notes are short 60-character thoughts. Visibility controls arrive with Notes.
-                </p>
-                {isAdmin && (
-                  <Link
-                    to="/admin"
-                    onClick={() => setOpen(false)}
-                    className="flex items-center gap-3 px-4 min-h-[48px] border-b border-border/60 hover:bg-accent transition"
-                  >
-                    <span className="text-muted-foreground">
-                      <Shield size={16} />
-                    </span>
-                    <span className="flex-1 text-sm text-foreground">Admin dashboard</span>
-                  </Link>
-                )}
-                <Link
-                  to="/takedown"
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 px-4 min-h-[48px] border-b border-border/60 hover:bg-accent transition"
-                >
-                  <span className="text-muted-foreground">
-                    <Music size={16} />
-                  </span>
-                  <span className="flex-1 text-sm text-foreground">Music Takedown</span>
-                </Link>
-                <Link
-                  to="/account"
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 px-4 min-h-[48px] border-b border-border/60 hover:bg-accent transition"
-                >
-                  <span className="text-muted-foreground">
-                    <Download size={16} />
-                  </span>
-                  <span className="flex-1 text-sm text-foreground">Your data &amp; account</span>
-                </Link>
+              <SectionHeader>Content</SectionHeader>
+              <LinkRow to="/stories/archive" icon={<Sparkles size={15} />} label="Archived Stories" onDone={() => setOpen(false)} />
+              <Row icon={<Sparkles size={15} />} label="Story Settings" />
+              <Row icon={<BookMarked size={15} />} label="Note Settings" />
+              <LinkRow to="/takedown" icon={<Music size={15} />} label="Music Takedown" onDone={() => setOpen(false)} />
+              <LinkRow to="/account" icon={<Download size={15} />} label="Your data &amp; account" onDone={() => setOpen(false)} />
+              {isAdmin && (
+                <LinkRow to="/admin" icon={<Shield size={15} />} label="Admin dashboard" onDone={() => setOpen(false)} />
+              )}
+              <div className="grid grid-cols-2 border-b border-border/60 text-sm">
                 <Link
                   to="/privacy"
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 px-4 min-h-[48px] border-b border-border/60 hover:bg-accent transition"
+                  className="flex min-h-[36px] items-center gap-2 px-4 text-foreground hover:bg-accent transition"
                 >
-                  <span className="text-muted-foreground">
-                    <Shield size={16} />
-                  </span>
-                  <span className="flex-1 text-sm text-foreground">Privacy Policy</span>
+                  <Shield size={15} className="shrink-0 text-muted-foreground" />
+                  <span className="truncate">Privacy</span>
                 </Link>
                 <Link
                   to="/terms"
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 px-4 min-h-[48px] border-b border-border/60 hover:bg-accent transition"
+                  className="flex min-h-[36px] items-center gap-2 border-l border-border/60 px-4 text-foreground hover:bg-accent transition"
                 >
-                  <span className="text-muted-foreground">
-                    <FileText size={16} />
-                  </span>
-                  <span className="flex-1 text-sm text-foreground">Terms of Service</span>
+                  <FileText size={15} className="shrink-0 text-muted-foreground" />
+                  <span className="truncate">Terms</span>
                 </Link>
-
-                <button
-                  onClick={handleLogout}
-                  className="mt-3 mx-4 w-[calc(100%-2rem)] rounded-full border border-border px-4 py-2.5 flex items-center justify-center gap-2 text-sm font-medium text-destructive hover:bg-accent transition"
-                >
-                  <LogOut size={15} /> Log out
-                </button>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="flex w-full min-h-[36px] items-center gap-3 px-4 text-left text-sm font-medium text-destructive hover:bg-accent transition"
+              >
+                <LogOut size={15} className="shrink-0" /> Log out
+              </button>
+              <p className="px-4 pt-1 text-[10px] text-muted-foreground">Quiet hours 10PM–6AM respected.</p>
             </div>
           </aside>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
@@ -276,9 +246,32 @@ export function HamburgerMenu() {
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
-    <p className="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+    <p className="px-4 pt-1.5 pb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
       {children}
     </p>
+  );
+}
+
+function LinkRow({
+  to,
+  icon,
+  label,
+  onDone,
+}: {
+  to: "/stories/archive" | "/takedown" | "/account" | "/admin";
+  icon: React.ReactNode;
+  label: string;
+  onDone: () => void;
+}) {
+  return (
+    <Link
+      to={to}
+      onClick={onDone}
+      className="flex min-h-[36px] items-center gap-3 border-b border-border/60 px-4 hover:bg-accent transition"
+    >
+      <span className="shrink-0 text-muted-foreground">{icon}</span>
+      <span className="min-w-0 flex-1 truncate text-sm text-foreground">{label}</span>
+    </Link>
   );
 }
 
@@ -296,7 +289,7 @@ function Row({
   const inner = (
     <>
       <span className="text-muted-foreground shrink-0">{icon}</span>
-      <span className="flex-1 text-sm text-foreground truncate">{label}</span>
+      <span className="min-w-0 flex-1 text-sm text-foreground truncate">{label}</span>
       {children}
     </>
   );
@@ -304,13 +297,13 @@ function Row({
     return (
       <button
         onClick={onClick}
-        className="w-full flex items-center gap-3 px-4 min-h-[48px] border-b border-border/60 text-left hover:bg-accent transition"
+        className="w-full flex items-center gap-3 px-4 min-h-[36px] border-b border-border/60 text-left hover:bg-accent transition"
       >
         {inner}
       </button>
     );
   }
-  return <div className="flex items-center gap-3 px-4 min-h-[48px] border-b border-border/60">{inner}</div>;
+  return <div className="flex items-center gap-3 px-4 min-h-[36px] border-b border-border/60">{inner}</div>;
 }
 
 function Segmented({
@@ -366,7 +359,7 @@ function Toggle({
 }
 
 
-function BlockedUsers({ meId }: { meId: string | null }) {
+function BlockedUsers({ meId, onCount }: { meId: string | null; onCount: (n: number) => void }) {
   const [rows, setRows] = useState<{ id: string; blocked_id: string; name: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -384,6 +377,7 @@ function BlockedUsers({ meId }: { meId: string | null }) {
         (profs ?? []).forEach((p) => (names[p.id] = p.name));
       }
       setRows(list.map((b) => ({ ...b, name: names[b.blocked_id] ?? null })));
+      onCount(list.length);
       setLoading(false);
     })();
   }, [meId]);
@@ -394,7 +388,11 @@ function BlockedUsers({ meId }: { meId: string | null }) {
       toast.error(error.message);
       return;
     }
-    setRows((r) => r.filter((x) => x.id !== id));
+    setRows((r) => {
+      const next = r.filter((x) => x.id !== id);
+      onCount(next.length);
+      return next;
+    });
     toast.success("Unblocked");
   }
 
