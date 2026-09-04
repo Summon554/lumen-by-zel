@@ -215,8 +215,24 @@ export function HamburgerMenu() {
 
               <SectionHeader>Content</SectionHeader>
               <LinkRow to="/stories/archive" icon={<Sparkles size={15} />} label="Archived Stories" onDone={() => setOpen(false)} />
-              <Row icon={<Sparkles size={15} />} label="Story Settings" />
-              <Row icon={<BookMarked size={15} />} label="Note Settings" />
+              <Row icon={<Sparkles size={15} />} label="Story audience">
+                <SelectPill
+                  value={storyPrivacy}
+                  disabled={busy}
+                  options={Object.entries(STORY_PRIVACY_LABELS).map(([v, l]) => [v, l] as [string, string])}
+                  onChange={(v) => saveDefault("default_story_privacy", v, setStoryPrivacy)}
+                />
+              </Row>
+              <Row icon={<BookMarked size={15} />} label="Note audience">
+                <SelectPill
+                  value={notePrivacy}
+                  disabled={busy}
+                  options={(["followers", "public"] as NotePrivacy[]).map(
+                    (p) => [p, notePrivacyLabel(p)] as [string, string],
+                  )}
+                  onChange={(v) => saveDefault("default_note_privacy", v, setNotePrivacy)}
+                />
+              </Row>
               <LinkRow to="/takedown" icon={<Music size={15} />} label="Music Takedown" onDone={() => setOpen(false)} />
               <LinkRow to="/account" icon={<Download size={15} />} label="Your data &amp; account" onDone={() => setOpen(false)} />
               {isAdmin && (
