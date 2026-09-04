@@ -70,6 +70,10 @@ export function HamburgerMenu() {
       setAccountType((profile as any)?.account_type === "professional" ? "professional" : "personal");
       setIsPrivate(Boolean((profile as any)?.is_private));
       setBlockedCount(typeof count === "number" ? count : 0);
+      if ((profile as any)?.default_story_privacy)
+        setStoryPrivacy((profile as any).default_story_privacy as StoryPrivacy);
+      if ((profile as any)?.default_note_privacy)
+        setNotePrivacy((profile as any).default_note_privacy as NotePrivacy);
       if (pref) setPrefs(pref as Prefs);
     })();
   }, [open, userId]);
