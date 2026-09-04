@@ -52,7 +52,11 @@ export function HamburgerMenu() {
       if (!data.user) return;
       setUserId(data.user.id);
       const [{ data: profile }, { data: pref }, { count }] = await Promise.all([
-        supabase.from("profiles").select("account_type,is_private").eq("id", data.user.id).maybeSingle(),
+        (supabase as any)
+          .from("profiles")
+          .select("account_type,is_private,default_story_privacy,default_note_privacy")
+          .eq("id", data.user.id)
+          .maybeSingle(),
         (supabase as any)
           .from("notification_prefs")
           .select("messages,reactions,follows")
