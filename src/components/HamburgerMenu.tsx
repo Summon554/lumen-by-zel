@@ -25,6 +25,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { applyTheme, getStoredTheme, type Theme } from "@/lib/theme";
 import { useIsAdmin } from "@/lib/admin";
+import { STORY_PRIVACY_LABELS, type StoryPrivacy } from "@/lib/stories";
+import { notePrivacyLabel, type NotePrivacy } from "@/lib/notes";
 
 type Prefs = { messages: boolean; reactions: boolean; follows: boolean };
 
