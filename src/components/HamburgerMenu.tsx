@@ -113,13 +113,13 @@ export function HamburgerMenu() {
     }
   }
 
-  async function saveDefault<T extends string>(
+  async function saveDefault(
     column: "default_story_privacy" | "default_note_privacy",
     value: string,
-    setter: (v: T) => void,
+    setter: (v: any) => void,
   ) {
     if (!userId) return;
-    setter(value as T);
+    setter(value);
     setBusy(true);
     const { error } = await (supabase as any)
       .from("profiles")
