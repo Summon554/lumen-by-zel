@@ -25,6 +25,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { applyTheme, getStoredTheme, type Theme } from "@/lib/theme";
 import { useIsAdmin } from "@/lib/admin";
+import { STORY_PRIVACY_LABELS, type StoryPrivacy } from "@/lib/stories";
+import { notePrivacyLabel, type NotePrivacy } from "@/lib/notes";
 
 type Prefs = { messages: boolean; reactions: boolean; follows: boolean };
 
@@ -40,6 +42,8 @@ export function HamburgerMenu() {
   const [busy, setBusy] = useState(false);
   const [showBlocked, setShowBlocked] = useState(false);
   const [blockedCount, setBlockedCount] = useState<number | null>(null);
+  const [storyPrivacy, setStoryPrivacy] = useState<StoryPrivacy>("friends");
+  const [notePrivacy, setNotePrivacy] = useState<NotePrivacy>("followers");
 
   useEffect(() => {
     setTheme(getStoredTheme());
@@ -52,7 +56,11 @@ export function HamburgerMenu() {
       if (!data.user) return;
       setUserId(data.user.id);
       const [{ data: profile }, { data: pref }, { count }] = await Promise.all([
-        supabase.from("profiles").select("account_type,is_private").eq("id", data.user.id).maybeSingle(),
+        (supabase as any)
+          .from("profiles")
+          .select("account_type,is_private,default_story_privacy,default_note_privacy")
+          .eq("id", data.user.id)
+          .maybeSingle(),
         (supabase as any)
           .from("notification_prefs")
           .select("messages,reactions,follows")
@@ -66,6 +74,10 @@ export function HamburgerMenu() {
       setAccountType((profile as any)?.account_type === "professional" ? "professional" : "personal");
       setIsPrivate(Boolean((profile as any)?.is_private));
       setBlockedCount(typeof count === "number" ? count : 0);
+      if ((profile as any)?.default_story_privacy)
+        setStoryPrivacy((profile as any).default_story_privacy as StoryPrivacy);
+      if ((profile as any)?.default_note_privacy)
+        setNotePrivacy((profile as any).default_note_privacy as NotePrivacy);
       if (pref) setPrefs(pref as Prefs);
     })();
   }, [open, userId]);
@@ -99,6 +111,22 @@ export function HamburgerMenu() {
       setIsPrivate(prev);
       toast.error(error.message);
     }
+  }
+
+  async function saveDefault(
+    column: "default_story_privacy" | "default_note_privacy",
+    value: string,
+    setter: (v: any) => void,
+  ) {
+    if (!userId) return;
+    setter(value);
+    setBusy(true);
+    const { error } = await (supabase as any)
+      .from("profiles")
+      .update({ [column]: value })
+      .eq("id", userId);
+    setBusy(false);
+    if (error) toast.error(error.message);
   }
 
   async function updatePref(key: keyof Prefs, value: boolean) {
@@ -203,8 +231,24 @@ export function HamburgerMenu() {
 
               <SectionHeader>Content</SectionHeader>
               <LinkRow to="/stories/archive" icon={<Sparkles size={15} />} label="Archived Stories" onDone={() => setOpen(false)} />
-              <Row icon={<Sparkles size={15} />} label="Story Settings" />
-              <Row icon={<BookMarked size={15} />} label="Note Settings" />
+              <Row icon={<Sparkles size={15} />} label="Story audience">
+                <SelectPill
+                  value={storyPrivacy}
+                  disabled={busy}
+                  options={Object.entries(STORY_PRIVACY_LABELS).map(([v, l]) => [v, l] as [string, string])}
+                  onChange={(v) => saveDefault("default_story_privacy", v, setStoryPrivacy)}
+                />
+              </Row>
+              <Row icon={<BookMarked size={15} />} label="Note audience">
+                <SelectPill
+                  value={notePrivacy}
+                  disabled={busy}
+                  options={(["followers", "public"] as NotePrivacy[]).map(
+                    (p) => [p, notePrivacyLabel(p)] as [string, string],
+                  )}
+                  onChange={(v) => saveDefault("default_note_privacy", v, setNotePrivacy)}
+                />
+              </Row>
               <LinkRow to="/takedown" icon={<Music size={15} />} label="Music Takedown" onDone={() => setOpen(false)} />
               <LinkRow to="/account" icon={<Download size={15} />} label="Your data &amp; account" onDone={() => setOpen(false)} />
               {isAdmin && (
@@ -304,6 +348,33 @@ function Row({
     );
   }
   return <div className="flex items-center gap-3 px-4 min-h-[36px] border-b border-border/60">{inner}</div>;
+}
+
+function SelectPill({
+  value,
+  options,
+  disabled,
+  onChange,
+}: {
+  value: string;
+  options: [string, string][];
+  disabled?: boolean;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <select
+      value={value}
+      disabled={disabled}
+      onChange={(e) => onChange(e.target.value)}
+      className="shrink-0 rounded-full border border-border bg-background px-2 py-1 text-xs text-foreground outline-none focus:ring-2 focus:ring-primary/40"
+    >
+      {options.map(([v, label]) => (
+        <option key={v} value={v}>
+          {label}
+        </option>
+      ))}
+    </select>
+  );
 }
 
 function Segmented({

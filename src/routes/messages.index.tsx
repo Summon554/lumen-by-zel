@@ -5,6 +5,7 @@ import { getSignedUrls } from "@/lib/storage";
 import { ArrowLeft, MessageCircle } from "lucide-react";
 import { isOnline } from "@/lib/presence";
 import { PresenceDot } from "@/components/PresenceDot";
+import { NotesBar } from "@/components/NotesBar";
 
 export const Route = createFileRoute("/messages/")({
   ssr: false,
@@ -110,7 +111,11 @@ function MessagesPage() {
         </div>
       </header>
 
-      <section className="max-w-lg mx-auto px-4 pt-4 space-y-2">
+      <section className="max-w-lg mx-auto px-4 pt-3">
+        <NotesBar />
+      </section>
+
+      <section className="max-w-lg mx-auto px-4 pt-2 space-y-2">
         {loading && <p className="text-sm text-muted-foreground text-center py-8">Loading…</p>}
         {!loading && convos.length === 0 && people.length === 0 && (
           <div className="rounded-2xl border border-border bg-card/60 p-8 text-center text-sm text-muted-foreground space-y-2">

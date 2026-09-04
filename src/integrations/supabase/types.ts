@@ -435,6 +435,36 @@ export type Database = {
         }
         Relationships: []
       }
+      notes: {
+        Row: {
+          content: string
+          created_at: string
+          expires_at: string
+          id: string
+          privacy: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          privacy?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          privacy?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notification_prefs: {
         Row: {
           created_at: string
@@ -549,6 +579,7 @@ export type Database = {
           birthdate: string | null
           cover_url: string | null
           created_at: string
+          default_note_privacy: string
           default_story_privacy: string
           deletion_requested_at: string | null
           email: string | null
@@ -570,6 +601,7 @@ export type Database = {
           birthdate?: string | null
           cover_url?: string | null
           created_at?: string
+          default_note_privacy?: string
           default_story_privacy?: string
           deletion_requested_at?: string | null
           email?: string | null
@@ -591,6 +623,7 @@ export type Database = {
           birthdate?: string | null
           cover_url?: string | null
           created_at?: string
+          default_note_privacy?: string
           default_story_privacy?: string
           deletion_requested_at?: string | null
           email?: string | null
