@@ -350,6 +350,33 @@ function Row({
   return <div className="flex items-center gap-3 px-4 min-h-[36px] border-b border-border/60">{inner}</div>;
 }
 
+function SelectPill({
+  value,
+  options,
+  disabled,
+  onChange,
+}: {
+  value: string;
+  options: [string, string][];
+  disabled?: boolean;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <select
+      value={value}
+      disabled={disabled}
+      onChange={(e) => onChange(e.target.value)}
+      className="shrink-0 rounded-full border border-border bg-background px-2 py-1 text-xs text-foreground outline-none focus:ring-2 focus:ring-primary/40"
+    >
+      {options.map(([v, label]) => (
+        <option key={v} value={v}>
+          {label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 function Segmented({
   value,
   options,
