@@ -113,6 +113,22 @@ export function HamburgerMenu() {
     }
   }
 
+  async function saveDefault<T extends string>(
+    column: "default_story_privacy" | "default_note_privacy",
+    value: string,
+    setter: (v: T) => void,
+  ) {
+    if (!userId) return;
+    setter(value as T);
+    setBusy(true);
+    const { error } = await (supabase as any)
+      .from("profiles")
+      .update({ [column]: value })
+      .eq("id", userId);
+    setBusy(false);
+    if (error) toast.error(error.message);
+  }
+
   async function updatePref(key: keyof Prefs, value: boolean) {
     if (!userId) return;
     const next = { ...prefs, [key]: value };
