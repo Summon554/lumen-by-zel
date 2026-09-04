@@ -80,8 +80,8 @@ export function NotesBar() {
     const content = draft.trim();
     if (!content) return;
     const verdict = moderate(content);
-    if (verdict.action === "block") {
-      toast.error("That note breaks the community rules.");
+    if (!verdict.ok) {
+      toast.error(verdict.message ?? "That note can't be shared.");
       return;
     }
     setBusy(true);
