@@ -40,6 +40,8 @@ export function HamburgerMenu() {
   const [busy, setBusy] = useState(false);
   const [showBlocked, setShowBlocked] = useState(false);
   const [blockedCount, setBlockedCount] = useState<number | null>(null);
+  const [storyPrivacy, setStoryPrivacy] = useState<StoryPrivacy>("friends");
+  const [notePrivacy, setNotePrivacy] = useState<NotePrivacy>("followers");
 
   useEffect(() => {
     setTheme(getStoredTheme());
