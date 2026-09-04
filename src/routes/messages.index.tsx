@@ -5,6 +5,7 @@ import { getSignedUrls } from "@/lib/storage";
 import { ArrowLeft, MessageCircle } from "lucide-react";
 import { isOnline } from "@/lib/presence";
 import { PresenceDot } from "@/components/PresenceDot";
+import { NotesBar } from "@/components/NotesBar";
 
 export const Route = createFileRoute("/messages/")({
   ssr: false,
