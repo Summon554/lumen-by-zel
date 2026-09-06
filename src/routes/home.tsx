@@ -310,6 +310,56 @@ function HomePage() {
     }
   }
 
+  async function toggleSave(post: PostRow) {
+    if (!userId) return;
+    const saved = savedIds.has(post.id);
+    setSavedIds((prev) => {
+      const next = new Set(prev);
+      if (saved) next.delete(post.id);
+      else next.add(post.id);
+      return next;
+    });
+    const { error } = saved
+      ? await (supabase as any).from("saved_posts").delete().eq("user_id", userId).eq("post_id", post.id)
+      : await (supabase as any).from("saved_posts").insert({ user_id: userId, post_id: post.id });
+    if (error) {
+      toast.error(error.message);
+      setSavedIds((prev) => {
+        const next = new Set(prev);
+        if (saved) next.add(post.id);
+        else next.delete(post.id);
+        return next;
+      });
+      return;
+    }
+    toast.success(saved ? "Removed from Saved" : "Saved ✨");
+  }
+
+  async function editCaption(post: PostRow, nextCaption: string) {
+    if (!userId || post.user_id !== userId) return;
+    const clean = nextCaption.trim();
+    const check = moderate(clean);
+    if (!check.ok) {
+      toast.error(check.message!);
+      return;
+    }
+    const editedAt = new Date().toISOString();
+    const { error } = await supabase
+      .from("posts")
+      .update({ caption: clean || null, edited_at: editedAt } as any)
+      .eq("id", post.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setPosts((prev) =>
+      prev.map((p) => (p.id === post.id ? { ...p, caption: clean || null, edited_at: editedAt } : p)),
+    );
+    toast.success("Post updated");
+  }
+
+
+
   async function toggleFollow(targetId: string) {
     if (!userId || targetId === userId) return;
     const next = new Set(followingIds);
