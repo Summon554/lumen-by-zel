@@ -14,7 +14,10 @@ import {
   Search as SearchIcon,
   Share2,
   Feather,
+  Bookmark,
+  Pencil,
 } from "lucide-react";
+
 import { getSignedUrls, uploadUserFile, compressImage, MAX_VIDEO_BYTES, MAX_UPLOAD_BYTES } from "@/lib/storage";
 import { FounderBadge } from "@/components/FounderBadge";
 import { CommentThread, type ThreadComment, type CommentLikeState } from "@/components/CommentThread";
@@ -59,7 +62,9 @@ type PostRow = {
   image_url: string | null;
   created_at: string;
   shared_post_id?: string | null;
+  edited_at?: string | null;
 };
+
 type CommentRow = ThreadComment;
 
 const VIDEO_RE = /\.(mp4|webm|mov|m4v)$/i;
@@ -86,6 +91,8 @@ function HomePage() {
   const [shareCounts, setShareCounts] = useState<Record<string, number>>({});
   const [blockedIds, setBlockedIds] = useState<Set<string>>(new Set());
   const [viewer, setViewer] = useState<ViewerMedia | null>(null);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+
 
   useEffect(() => {
     (async () => {
@@ -175,6 +182,14 @@ function HomePage() {
         if (p.shared_post_id) shares[p.shared_post_id] = (shares[p.shared_post_id] ?? 0) + 1;
       });
       setShareCounts(shares);
+
+      const { data: savedRows } = await (supabase as any)
+        .from("saved_posts")
+        .select("post_id")
+        .eq("user_id", uid);
+      setSavedIds(new Set((savedRows ?? []).map((r: any) => r.post_id)));
+
+
 
       const { data: likeRows } = await supabase
         .from("likes")
@@ -294,6 +309,56 @@ function HomePage() {
       await supabase.from("likes").delete().eq("post_id", post.id).eq("user_id", userId);
     }
   }
+
+  async function toggleSave(post: PostRow) {
+    if (!userId) return;
+    const saved = savedIds.has(post.id);
+    setSavedIds((prev) => {
+      const next = new Set(prev);
+      if (saved) next.delete(post.id);
+      else next.add(post.id);
+      return next;
+    });
+    const { error } = saved
+      ? await (supabase as any).from("saved_posts").delete().eq("user_id", userId).eq("post_id", post.id)
+      : await (supabase as any).from("saved_posts").insert({ user_id: userId, post_id: post.id });
+    if (error) {
+      toast.error(error.message);
+      setSavedIds((prev) => {
+        const next = new Set(prev);
+        if (saved) next.add(post.id);
+        else next.delete(post.id);
+        return next;
+      });
+      return;
+    }
+    toast.success(saved ? "Removed from Saved" : "Saved ✨");
+  }
+
+  async function editCaption(post: PostRow, nextCaption: string) {
+    if (!userId || post.user_id !== userId) return;
+    const clean = nextCaption.trim();
+    const check = moderate(clean);
+    if (!check.ok) {
+      toast.error(check.message!);
+      return;
+    }
+    const editedAt = new Date().toISOString();
+    const { error } = await supabase
+      .from("posts")
+      .update({ caption: clean || null, edited_at: editedAt } as any)
+      .eq("id", post.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setPosts((prev) =>
+      prev.map((p) => (p.id === post.id ? { ...p, caption: clean || null, edited_at: editedAt } : p)),
+    );
+    toast.success("Post updated");
+  }
+
+
 
   async function toggleFollow(targetId: string) {
     if (!userId || targetId === userId) return;
@@ -553,6 +618,10 @@ function HomePage() {
             key={post.id}
             post={post}
             me={userId}
+            saved={savedIds.has(post.id)}
+            onToggleSave={() => toggleSave(post)}
+            onEditCaption={(c) => editCaption(post, c)}
+
             author={profiles[post.user_id]}
             imageUrl={post.image_url ? signedUrls[post.image_url] : undefined}
             avatarUrl={
@@ -628,6 +697,10 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
 function PostCard({
   post,
   me,
+  saved,
+  onToggleSave,
+  onEditCaption,
+
   author,
   imageUrl,
   avatarUrl,

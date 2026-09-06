@@ -363,6 +363,38 @@ export type Database = {
           },
         ]
       }
+      message_reactions: {
+        Row: {
+          created_at: string
+          id: string
+          message_id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_id: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           attachment_name: string | null
@@ -372,8 +404,11 @@ export type Database = {
           created_at: string
           deleted_for_everyone: boolean
           id: string
+          quote_kind: string | null
+          quote_text: string | null
           read_at: string | null
           receiver_id: string
+          reply_to_id: string | null
           sender_id: string
         }
         Insert: {
@@ -384,8 +419,11 @@ export type Database = {
           created_at?: string
           deleted_for_everyone?: boolean
           id?: string
+          quote_kind?: string | null
+          quote_text?: string | null
           read_at?: string | null
           receiver_id: string
+          reply_to_id?: string | null
           sender_id: string
         }
         Update: {
@@ -396,11 +434,22 @@ export type Database = {
           created_at?: string
           deleted_for_everyone?: boolean
           id?: string
+          quote_kind?: string | null
+          quote_text?: string | null
           read_at?: string | null
           receiver_id?: string
+          reply_to_id?: string | null
           sender_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       moderation_flags: {
         Row: {
@@ -540,6 +589,7 @@ export type Database = {
         Row: {
           caption: string | null
           created_at: string
+          edited_at: string | null
           id: string
           image_url: string | null
           shared_post_id: string | null
@@ -548,6 +598,7 @@ export type Database = {
         Insert: {
           caption?: string | null
           created_at?: string
+          edited_at?: string | null
           id?: string
           image_url?: string | null
           shared_post_id?: string | null
@@ -556,6 +607,7 @@ export type Database = {
         Update: {
           caption?: string | null
           created_at?: string
+          edited_at?: string | null
           id?: string
           image_url?: string | null
           shared_post_id?: string | null
@@ -715,6 +767,35 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "reports_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saved_posts: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_posts_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
             referencedRelation: "posts"
