@@ -183,6 +183,14 @@ function HomePage() {
       });
       setShareCounts(shares);
 
+      const { data: savedRows } = await (supabase as any)
+        .from("saved_posts")
+        .select("post_id")
+        .eq("user_id", uid);
+      setSavedIds(new Set((savedRows ?? []).map((r: any) => r.post_id)));
+
+
+
       const { data: likeRows } = await supabase
         .from("likes")
         .select("post_id,user_id")
