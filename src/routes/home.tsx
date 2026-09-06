@@ -618,6 +618,10 @@ function HomePage() {
             key={post.id}
             post={post}
             me={userId}
+            saved={savedIds.has(post.id)}
+            onToggleSave={() => toggleSave(post)}
+            onEditCaption={(c) => editCaption(post, c)}
+
             author={profiles[post.user_id]}
             imageUrl={post.image_url ? signedUrls[post.image_url] : undefined}
             avatarUrl={
