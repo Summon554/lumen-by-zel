@@ -43,11 +43,15 @@ type PostRow = {
 
 function SearchPage() {
   const navigate = useNavigate();
-  const [q, setQ] = useState("");
+  const { q: initialQ } = Route.useSearch();
+  const [q, setQ] = useState(initialQ ?? "");
   const [results, setResults] = useState<Row[]>([]);
   const [postResults, setPostResults] = useState<PostRow[]>([]);
   const [postImages, setPostImages] = useState<Record<string, string>>({});
-  const [scope, setScope] = useState<"people" | "posts">("people");
+  const [scope, setScope] = useState<"people" | "posts">(
+    (initialQ ?? "").startsWith("#") ? "posts" : "people",
+  );
+
   const [avatars, setAvatars] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [me, setMe] = useState<string | null>(null);
