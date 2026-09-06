@@ -14,7 +14,10 @@ import {
   Search as SearchIcon,
   Share2,
   Feather,
+  Bookmark,
+  Pencil,
 } from "lucide-react";
+
 import { getSignedUrls, uploadUserFile, compressImage, MAX_VIDEO_BYTES, MAX_UPLOAD_BYTES } from "@/lib/storage";
 import { FounderBadge } from "@/components/FounderBadge";
 import { CommentThread, type ThreadComment, type CommentLikeState } from "@/components/CommentThread";
