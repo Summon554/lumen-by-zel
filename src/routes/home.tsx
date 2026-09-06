@@ -91,6 +91,8 @@ function HomePage() {
   const [shareCounts, setShareCounts] = useState<Record<string, number>>({});
   const [blockedIds, setBlockedIds] = useState<Set<string>>(new Set());
   const [viewer, setViewer] = useState<ViewerMedia | null>(null);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+
 
   useEffect(() => {
     (async () => {
