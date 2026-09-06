@@ -62,7 +62,9 @@ type PostRow = {
   image_url: string | null;
   created_at: string;
   shared_post_id?: string | null;
+  edited_at?: string | null;
 };
+
 type CommentRow = ThreadComment;
 
 const VIDEO_RE = /\.(mp4|webm|mov|m4v)$/i;
