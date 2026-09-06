@@ -697,6 +697,10 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
 function PostCard({
   post,
   me,
+  saved,
+  onToggleSave,
+  onEditCaption,
+
   author,
   imageUrl,
   avatarUrl,
