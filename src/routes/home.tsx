@@ -497,7 +497,7 @@ function HomePage() {
           </div>
           <div className="flex items-center gap-1">
             <Link
-              to="/search" search={{}}
+              to="/search" search={{ q: undefined }}
               className="h-9 w-9 grid place-items-center rounded-full hover:bg-accent transition"
               aria-label="Search"
             >
@@ -597,7 +597,7 @@ function HomePage() {
               body="Follow a few people and their posts will glow up right here."
               action={
                 <Link
-                  to="/search" search={{}}
+                  to="/search" search={{ q: undefined }}
                   className="inline-block rounded-full px-4 py-1.5 text-sm text-primary-foreground font-medium"
                   style={{ background: "var(--gradient-glow)" }}
                 >
