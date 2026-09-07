@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { compressImage, uploadUserFile } from "@/lib/storage";
 import { LUMEN_LIBRARY, MAX_CLIP_SECONDS } from "@/lib/music";
+import { LumenAvatar } from "@/components/LumenAvatar";
 import { moderate } from "@/lib/moderation";
 import {
   STORY_BACKGROUNDS,
@@ -18,11 +19,15 @@ import {
 export function StoryComposer({
   userId,
   defaultPrivacy,
+  authorName,
+  authorAvatar,
   onClose,
   onCreated,
 }: {
   userId: string;
   defaultPrivacy: StoryPrivacy;
+  authorName?: string | null;
+  authorAvatar?: string | null;
   onClose: () => void;
   onCreated: () => void;
 }) {
