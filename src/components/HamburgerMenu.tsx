@@ -5,6 +5,7 @@ import {
   Ban,
   BookMarked,
   Bell,
+  Bookmark,
   Download,
   FileText,
   Heart,
@@ -230,6 +231,7 @@ export function HamburgerMenu() {
               </Row>
 
               <SectionHeader>Content</SectionHeader>
+              <LinkRow to="/saved" icon={<Bookmark size={15} />} label="Saved Posts" onDone={() => setOpen(false)} />
               <LinkRow to="/stories/archive" icon={<Sparkles size={15} />} label="Archived Stories" onDone={() => setOpen(false)} />
               <Row icon={<Sparkles size={15} />} label="Story audience">
                 <SelectPill
@@ -302,7 +304,7 @@ function LinkRow({
   label,
   onDone,
 }: {
-  to: "/stories/archive" | "/takedown" | "/account" | "/admin";
+  to: "/stories/archive" | "/takedown" | "/account" | "/admin" | "/saved";
   icon: React.ReactNode;
   label: string;
   onDone: () => void;
