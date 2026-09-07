@@ -121,7 +121,7 @@ function MessagesPage() {
           <div className="rounded-2xl border border-border bg-card/60 p-8 text-center text-sm text-muted-foreground space-y-2">
             <MessageCircle size={22} className="mx-auto text-primary" />
             <p>No conversations yet.</p>
-            <Link to="/search" className="text-primary underline underline-offset-4">
+            <Link to="/search" search={{}} className="text-primary underline underline-offset-4">
               Find people to message
             </Link>
           </div>
