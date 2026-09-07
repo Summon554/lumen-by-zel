@@ -5,6 +5,7 @@ import {
   Ban,
   BookMarked,
   Bell,
+  Bookmark,
   Download,
   FileText,
   Heart,
