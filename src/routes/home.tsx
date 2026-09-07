@@ -729,7 +729,11 @@ function PostCard({
 }: {
   post: PostRow;
   me: string | null;
+  saved: boolean;
+  onToggleSave: () => void;
+  onEditCaption: (caption: string) => void;
   author?: Profile;
+
   imageUrl?: string;
   avatarUrl?: string;
   likeState: { count: number; likedByMe: boolean };
