@@ -231,6 +231,7 @@ export function HamburgerMenu() {
               </Row>
 
               <SectionHeader>Content</SectionHeader>
+              <LinkRow to="/saved" icon={<Bookmark size={15} />} label="Saved Posts" onDone={() => setOpen(false)} />
               <LinkRow to="/stories/archive" icon={<Sparkles size={15} />} label="Archived Stories" onDone={() => setOpen(false)} />
               <Row icon={<Sparkles size={15} />} label="Story audience">
                 <SelectPill
