@@ -5,6 +5,7 @@ import { LumenAvatar } from "@/components/LumenAvatar";
 import { StoryComposer } from "@/components/StoryComposer";
 import { StoryViewer } from "@/components/StoryViewer";
 import type { StoryPrivacy, StoryRow } from "@/lib/stories";
+import { getSignedUrls } from "@/lib/storage";
 
 type Group = { userId: string; name: string | null; avatar: string | null; stories: StoryRow[]; unviewed: boolean };
 
@@ -14,6 +15,8 @@ export function StoriesBar({ meId }: { meId: string | null }) {
   const [composing, setComposing] = useState(false);
   const [active, setActive] = useState<Group | null>(null);
   const [defaultPrivacy, setDefaultPrivacy] = useState<StoryPrivacy>("public");
+  const [me, setMe] = useState<{ name: string | null; avatar: string | null }>({ name: null, avatar: null });
+  const [streak, setStreak] = useState(0);
 
   const load = useCallback(async () => {
     if (!meId) return;
@@ -27,7 +30,7 @@ export function StoriesBar({ meId }: { meId: string | null }) {
         .neq("privacy", "onlyme")
         .order("created_at", { ascending: true }),
       sb.from("story_views").select("story_id").eq("viewer_id", meId),
-      sb.from("profiles").select("default_story_privacy").eq("id", meId).maybeSingle(),
+      sb.from("profiles").select("default_story_privacy,name,avatar_url").eq("id", meId).maybeSingle(),
     ]);
     if (prof?.default_story_privacy) setDefaultPrivacy(prof.default_story_privacy as StoryPrivacy);
     const stories = ((rows ?? []) as StoryRow[]).map((s) => ({ ...s, stickers: (s.stickers ?? []) as StoryRow["stickers"] }));
@@ -37,18 +40,42 @@ export function StoriesBar({ meId }: { meId: string | null }) {
       ? await supabase.from("profiles").select("id,name,avatar_url").in("id", ids)
       : { data: [] as any[] };
     const byId = new Map((profs ?? []).map((p: any) => [p.id, p]));
+    const signed = await getSignedUrls([
+      ...((profs ?? []) as any[]).map((p) => p.avatar_url),
+      prof?.avatar_url,
+    ].filter(Boolean) as string[]);
+    setMe({ name: prof?.name ?? null, avatar: prof?.avatar_url ? (signed[prof.avatar_url] ?? null) : null });
     const grouped: Group[] = ids.map((id) => {
       const mine = stories.filter((s) => s.user_id === id);
       return {
         userId: id,
         name: byId.get(id)?.name ?? null,
-        avatar: byId.get(id)?.avatar_url ?? null,
+        avatar: byId.get(id)?.avatar_url ? (signed[byId.get(id).avatar_url] ?? null) : null,
         stories: mine,
         unviewed: id !== meId && mine.some((s) => !viewed.has(s.id)),
       };
     });
     grouped.sort((a, b) => Number(b.unviewed) - Number(a.unviewed));
     setGroups(grouped);
+
+    // Glow Streak: consecutive days (up to 30) with a Light Moment shared.
+    const since = new Date(Date.now() - 30 * 86400000).toISOString();
+    const { data: mineRows } = await sb
+      .from("stories")
+      .select("created_at")
+      .eq("user_id", meId)
+      .gte("created_at", since);
+    const days = new Set(
+      ((mineRows ?? []) as { created_at: string }[]).map((r) => new Date(r.created_at).toDateString()),
+    );
+    let count = 0;
+    const cursor = new Date();
+    if (!days.has(cursor.toDateString())) cursor.setDate(cursor.getDate() - 1);
+    while (days.has(cursor.toDateString()) && count < 30) {
+      count += 1;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    setStreak(count);
   }, [meId]);
 
   useEffect(() => {
@@ -61,10 +88,23 @@ export function StoriesBar({ meId }: { meId: string | null }) {
     <>
       <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
         <button onClick={() => setComposing(true)} className="flex w-16 shrink-0 flex-col items-center gap-1">
-          <span className="relative grid h-14 w-14 place-items-center rounded-full border border-dashed border-border bg-card">
-            <Plus size={18} className="text-primary" />
+          <span className="relative grid h-14 w-14 place-items-center">
+            <LumenAvatar name={me.name} url={me.avatar} size={52} />
+            <span
+              className="absolute -bottom-0.5 -right-0.5 grid h-5 w-5 place-items-center rounded-full text-primary-foreground"
+              style={{ background: "var(--gradient-glow)" }}
+            >
+              <Plus size={12} />
+            </span>
+            {streak > 1 && (
+              <span className="absolute -top-1 left-0 rounded-full bg-background px-1 text-[10px] font-semibold text-primary">
+                ✨{streak}
+              </span>
+            )}
           </span>
-          <span className="truncate text-[11px] text-muted-foreground">Your moment</span>
+          <span className="truncate text-[11px] text-muted-foreground">
+            {streak > 1 ? `${streak}-day glow` : "Your moment"}
+          </span>
         </button>
         {groups.map((g) => (
           <button key={g.userId} onClick={() => setActive(g)} className="flex w-16 shrink-0 flex-col items-center gap-1">
@@ -93,7 +133,14 @@ export function StoriesBar({ meId }: { meId: string | null }) {
       </div>
 
       {composing && (
-        <StoryComposer userId={meId} defaultPrivacy={defaultPrivacy} onClose={() => setComposing(false)} onCreated={load} />
+        <StoryComposer
+          userId={meId}
+          defaultPrivacy={defaultPrivacy}
+          authorName={me.name}
+          authorAvatar={me.avatar}
+          onClose={() => setComposing(false)}
+          onCreated={load}
+        />
       )}
       {active && (
         <StoryViewer

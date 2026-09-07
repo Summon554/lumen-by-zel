@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { compressImage, uploadUserFile } from "@/lib/storage";
 import { LUMEN_LIBRARY, MAX_CLIP_SECONDS } from "@/lib/music";
+import { LumenAvatar } from "@/components/LumenAvatar";
 import { moderate } from "@/lib/moderation";
 import {
   STORY_BACKGROUNDS,
@@ -18,11 +19,15 @@ import {
 export function StoryComposer({
   userId,
   defaultPrivacy,
+  authorName,
+  authorAvatar,
   onClose,
   onCreated,
 }: {
   userId: string;
   defaultPrivacy: StoryPrivacy;
+  authorName?: string | null;
+  authorAvatar?: string | null;
   onClose: () => void;
   onCreated: () => void;
 }) {
@@ -111,12 +116,22 @@ export function StoryComposer({
   return (
     <div className="fixed inset-0 z-[60] overflow-y-auto bg-background">
       <div className="mx-auto max-w-lg px-4 py-4">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold">New Light Moment</p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <LumenAvatar name={authorName} url={authorAvatar} size={36} />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold leading-tight">New Light Moment</p>
+              <p className="truncate text-[11px] text-muted-foreground">
+                Sharing as {authorName || "you"}
+              </p>
+            </div>
+          </div>
           <button onClick={onClose} aria-label="Close" className="grid h-9 w-9 place-items-center rounded-full hover:bg-accent">
             <X size={18} />
           </button>
         </div>
+
+
 
         <div className="mt-3 flex gap-2 text-xs">
           {(["photo", "video", "text", "music"] as StoryKind[]).map((k) => (
