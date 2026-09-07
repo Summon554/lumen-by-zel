@@ -13,6 +13,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TakedownRouteImport } from './routes/takedown'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as SavedRouteImport } from './routes/saved'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as NotificationsRouteImport } from './routes/notifications'
@@ -45,6 +46,11 @@ const SignupRoute = SignupRouteImport.update({
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SavedRoute = SavedRouteImport.update({
+  id: '/saved',
+  path: '/saved',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -122,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof NotificationsRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
+  '/saved': typeof SavedRoute
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
   '/takedown': typeof TakedownRoute
@@ -141,6 +148,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof NotificationsRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
+  '/saved': typeof SavedRoute
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
   '/takedown': typeof TakedownRoute
@@ -161,6 +169,7 @@ export interface FileRoutesById {
   '/notifications': typeof NotificationsRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
+  '/saved': typeof SavedRoute
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
   '/takedown': typeof TakedownRoute
@@ -182,6 +191,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/privacy'
     | '/profile'
+    | '/saved'
     | '/search'
     | '/signup'
     | '/takedown'
@@ -201,6 +211,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/privacy'
     | '/profile'
+    | '/saved'
     | '/search'
     | '/signup'
     | '/takedown'
@@ -220,6 +231,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/privacy'
     | '/profile'
+    | '/saved'
     | '/search'
     | '/signup'
     | '/takedown'
@@ -240,6 +252,7 @@ export interface RootRouteChildren {
   NotificationsRoute: typeof NotificationsRoute
   PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
+  SavedRoute: typeof SavedRoute
   SearchRoute: typeof SearchRoute
   SignupRoute: typeof SignupRoute
   TakedownRoute: typeof TakedownRoute
@@ -279,6 +292,13 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/saved': {
+      id: '/saved'
+      path: '/saved'
+      fullPath: '/saved'
+      preLoaderRoute: typeof SavedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -384,6 +404,7 @@ const rootRouteChildren: RootRouteChildren = {
   NotificationsRoute: NotificationsRoute,
   PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
+  SavedRoute: SavedRoute,
   SearchRoute: SearchRoute,
   SignupRoute: SignupRoute,
   TakedownRoute: TakedownRoute,
