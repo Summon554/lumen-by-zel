@@ -304,7 +304,7 @@ function LinkRow({
   label,
   onDone,
 }: {
-  to: "/stories/archive" | "/takedown" | "/account" | "/admin";
+  to: "/stories/archive" | "/takedown" | "/account" | "/admin" | "/saved";
   icon: React.ReactNode;
   label: string;
   onDone: () => void;
