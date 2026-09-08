@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "sonner";
 import { UpdateBanner } from "@/components/UpdateBanner";
 import { LumenNotifier } from "@/components/LumenNotifier";
+import { CallOverlay } from "@/components/CallOverlay";
 import { initTheme } from "@/lib/theme";
 
 function NotFoundComponent() {
@@ -147,6 +148,7 @@ function RootComponent() {
       <Outlet />
       <UpdateBanner />
       <LumenNotifier />
+      <CallOverlay />
       <Toaster position="top-center" richColors />
     </QueryClientProvider>
   );
