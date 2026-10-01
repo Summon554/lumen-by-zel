@@ -193,10 +193,6 @@ function ChatPage() {
             setReactions((prev) => {
               const next = { ...prev };
               if (payload.eventType === "DELETE") {
-                for (const mid of Object.keys(next)) {
-                  const entry = Object.entries(next[mid]).find(([, _t]) => false);
-                  void entry;
-                }
                 if (o?.message_id && o?.user_id && next[o.message_id]) {
                   const copy = { ...next[o.message_id] };
                   delete copy[o.user_id];
