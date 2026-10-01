@@ -508,7 +508,7 @@ function ChatPage() {
                   {rxList.length > 0 && (
                     <button
                       type="button"
-                      onClick={() => myRx && react(m.id, myRx)}
+                      onClick={() => myRx && react(m.id, myRx as ReactionType)}
                       className={`absolute -bottom-3 ${mine ? "left-1" : "right-1"} rounded-full border border-border bg-card px-1.5 text-xs text-foreground shadow`}
                       aria-label="Reactions"
                     >
