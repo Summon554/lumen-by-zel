@@ -36,7 +36,7 @@ function AdminPage() {
     const sb = supabase as any;
     const since = new Date(Date.now() - 7 * 86400000).toISOString();
     const [profiles, activeCount, storyCount, reportRows, takedownRows, appealRows, auditRows] = await Promise.all([
-      sb.from("profiles").select("id,name,email,strikes,suspended_until,is_founder,created_at").order("created_at", { ascending: false }).limit(50),
+      sb.rpc("admin_list_users"),
       sb.from("profiles").select("id", { count: "exact", head: true }).gte("last_seen_at", since),
       sb.from("stories").select("id,kind", { count: "exact" }).eq("archived", false).gt("expires_at", new Date().toISOString()),
       sb.from("reports").select("*").order("created_at", { ascending: false }).limit(50),

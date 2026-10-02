@@ -27,7 +27,7 @@ export const Route = createFileRoute("/search")({
 type Row = {
   id: string;
   name: string | null;
-  email: string | null;
+  username: string | null;
   is_founder: boolean | null;
   avatar_url: string | null;
   is_private: boolean | null;
@@ -89,8 +89,8 @@ function SearchPage() {
       const [{ data }, { data: postData }] = await Promise.all([
         supabase
           .from("profiles")
-          .select("id,name,email,is_founder,avatar_url,is_private")
-          .or(`name.ilike.%${term}%,email.ilike.%${term}%`)
+          .select("id,name,username,is_founder,avatar_url,is_private")
+          .or(`name.ilike.%${term}%,username.ilike.%${term}%`)
           .limit(30),
         supabase
           .from("posts")
@@ -237,7 +237,7 @@ function SearchPage() {
                   {r.is_founder && <FounderBadge size={12} showLabel={false} />}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
-                  @{(r.email?.split("@")[0] || "lumen").toLowerCase()}
+                  @{(r.username || "lumen").toLowerCase()}
                 </p>
               </div>
               {me !== r.id && (

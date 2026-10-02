@@ -29,7 +29,7 @@ type Notif = {
   read: boolean;
   created_at: string;
 };
-type Profile = { id: string; name: string | null; email: string | null; avatar_url: string | null };
+type Profile = { id: string; name: string | null; is_founder: boolean | null; avatar_url: string | null };
 
 function NotificationsPage() {
   const navigate = useNavigate();
@@ -58,7 +58,7 @@ function NotificationsPage() {
       if (actorIds.length) {
         const { data: profs } = await supabase
           .from("profiles")
-          .select("id,name,email,avatar_url")
+          .select("id,name,is_founder,avatar_url")
           .in("id", actorIds);
         const map: Record<string, Profile> = {};
         (profs ?? []).forEach((p) => (map[p.id] = p as Profile));
@@ -121,7 +121,7 @@ function NotificationsPage() {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm truncate">
                     <span className="font-medium">{actor?.name || "Someone"}</span>{" "}
-                    {isFounder(actor?.email) && <FounderBadge size={12} showLabel={false} />}{" "}
+                    {actor?.is_founder && <FounderBadge size={12} showLabel={false} />}{" "}
                     <span className="text-muted-foreground">
                       {labelFor(n.type)}
                     </span>
