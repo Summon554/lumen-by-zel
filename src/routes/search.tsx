@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getSignedUrls } from "@/lib/storage";
+import { ExploreGrid } from "@/components/ExploreGrid";
 import { FounderBadge } from "@/components/FounderBadge";
 import { ArrowLeft, Search as SearchIcon } from "lucide-react";
 
@@ -48,8 +49,8 @@ function SearchPage() {
   const [results, setResults] = useState<Row[]>([]);
   const [postResults, setPostResults] = useState<PostRow[]>([]);
   const [postImages, setPostImages] = useState<Record<string, string>>({});
-  const [scope, setScope] = useState<"people" | "posts">(
-    (initialQ ?? "").startsWith("#") ? "posts" : "people",
+  const [scope, setScope] = useState<"explore" | "people" | "posts">(
+    !initialQ ? "explore" : initialQ.startsWith("#") ? "posts" : "people",
   );
 
   const [avatars, setAvatars] = useState<Record<string, string>>({});
@@ -161,14 +162,17 @@ function SearchPage() {
             <input
               autoFocus
               value={q}
-              onChange={(e) => setQ(e.target.value)}
+              onChange={(e) => {
+                setQ(e.target.value);
+                if (e.target.value && scope === "explore") setScope(e.target.value.startsWith("#") ? "posts" : "people");
+              }}
               placeholder="Search people, posts or #hashtags"
               className="w-full rounded-full border border-border bg-card pl-9 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
         </div>
         <div className="max-w-lg mx-auto px-4 pb-2 flex items-center gap-2">
-          {(["people", "posts"] as const).map((s) => (
+          {(["explore", "people", "posts"] as const).map((s) => (
             <button
               key={s}
               onClick={() => setScope(s)}
@@ -177,16 +181,17 @@ function SearchPage() {
               }`}
               style={scope === s ? { background: "var(--gradient-glow)" } : undefined}
             >
-              {s === "people" ? "People" : "Posts"}
-              {s === "people" ? ` ${results.length || ""}` : ` ${postResults.length || ""}`}
+              {s === "explore" ? "Explore" : s === "people" ? "People" : "Posts"}
+              {s === "explore" ? "" : s === "people" ? ` ${results.length || ""}` : ` ${postResults.length || ""}`}
             </button>
           ))}
         </div>
       </header>
 
       <section className="max-w-lg mx-auto px-4 pt-4 space-y-2">
-        {loading && <p className="text-sm text-muted-foreground text-center py-8">Searching…</p>}
-        {!loading && q && (scope === "people" ? results : postResults).length === 0 && (
+        {scope === "explore" && <ExploreGrid />}
+        {scope !== "explore" && loading && <p className="text-sm text-muted-foreground text-center py-8">Searching…</p>}
+        {scope !== "explore" && !loading && q && (scope === "people" ? results : postResults).length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-8">
             {scope === "people" ? "No people found." : "No posts found."}
           </p>
