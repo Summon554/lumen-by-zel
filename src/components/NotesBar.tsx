@@ -5,6 +5,7 @@ import { getSignedUrls } from "@/lib/storage";
 import { toast } from "sonner";
 import { X } from "lucide-react";
 import { moderate } from "@/lib/moderation";
+import { sendQuickReply } from "@/lib/quickReply";
 import { NOTE_MAX_CHARS, notePrivacyLabel, type NotePrivacy } from "@/lib/notes";
 
 type NoteRow = {
@@ -28,6 +29,25 @@ export function NotesBar() {
   const [draft, setDraft] = useState("");
   const [privacy, setPrivacy] = useState<NotePrivacy>("followers");
   const [busy, setBusy] = useState(false);
+  const [replyNote, setReplyNote] = useState<NoteRow | null>(null);
+  const [replyText, setReplyText] = useState("");
+
+  async function sendNoteReply() {
+    if (!meId || !replyNote) return;
+    setBusy(true);
+    try {
+      await sendQuickReply({ from: meId, to: replyNote.user_id, kind: "note", quote: replyNote.content, content: replyText });
+      const to = replyNote.user_id;
+      setReplyNote(null);
+      setReplyText("");
+      toast.success("Reply sent");
+      navigate({ to: "/messages/$id", params: { id: to } });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't send reply");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function load() {
     const { data: auth } = await supabase.auth.getUser();
@@ -145,7 +165,10 @@ export function NotesBar() {
         {others.map((n) => (
           <button
             key={n.id}
-            onClick={() => navigate({ to: "/messages/$id", params: { id: n.user_id } })}
+            onClick={() => {
+              setReplyText("");
+              setReplyNote(n);
+            }}
             className="shrink-0 w-20 text-center"
           >
             <Bubble text={n.content} />
@@ -156,6 +179,49 @@ export function NotesBar() {
           </button>
         ))}
       </div>
+
+      {replyNote && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/50 backdrop-blur-sm p-4" onClick={() => setReplyNote(null)}>
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-4 space-y-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3">
+              <Avatar id={replyNote.user_id} size={40} />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold truncate">{people[replyNote.user_id]?.name || "Lumen friend"}</p>
+                <p className="text-sm text-muted-foreground break-words">{replyNote.content}</p>
+              </div>
+              <button onClick={() => setReplyNote(null)} className="h-7 w-7 grid place-items-center rounded-full hover:bg-accent" aria-label="Close">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="flex justify-center gap-3">
+              {["❤️", "🔥", "😂", "👏"].map((e) => (
+                <button key={e} onClick={() => setReplyText((t) => t + e)} className="text-2xl transition hover:scale-125">
+                  {e}
+                </button>
+              ))}
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void sendNoteReply();
+              }}
+              className="flex gap-2"
+            >
+              <input
+                autoFocus
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                maxLength={500}
+                placeholder="Reply to note…"
+                className="flex-1 rounded-full border border-border bg-background px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+              />
+              <button type="submit" disabled={busy || !replyText.trim()} className="rounded-full px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50" style={{ background: "var(--gradient-glow)" }}>
+                Send
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {composing && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/50 backdrop-blur-sm p-4">
