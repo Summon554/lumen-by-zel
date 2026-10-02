@@ -681,6 +681,7 @@ export type Database = {
           name: string | null
           strikes: number
           suspended_until: string | null
+          username: string | null
         }
         Insert: {
           account_type?: string
@@ -703,6 +704,7 @@ export type Database = {
           name?: string | null
           strikes?: number
           suspended_until?: string | null
+          username?: string | null
         }
         Update: {
           account_type?: string
@@ -725,6 +727,7 @@ export type Database = {
           name?: string | null
           strikes?: number
           suspended_until?: string | null
+          username?: string | null
         }
         Relationships: []
       }
@@ -1032,7 +1035,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      admin_list_users: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          id: string
+          is_founder: boolean
+          name: string
+          strikes: number
+          suspended_until: string
+        }[]
+      }
+      get_my_private_profile: {
+        Args: never
+        Returns: {
+          birthdate: string
+          deletion_requested_at: string
+          email: string
+          guardian_email: string
+          guardian_verified: boolean
+          id: string
+          is_minor: boolean
+          strikes: number
+          suspended_until: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
