@@ -73,7 +73,8 @@ function ChatPage() {
   const typingChannel = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingFileState, setPendingFile] = useState<File | null>(null);
+  const pendingFile = pendingFileState;
   const [viewer, setViewer] = useState<ViewerMedia | null>(null);
   const [reactions, setReactions] = useState<Record<string, Record<string, string>>>({});
   const [pickerFor, setPickerFor] = useState<string | null>(null);
