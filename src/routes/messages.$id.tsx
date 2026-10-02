@@ -18,6 +18,7 @@ import { PresenceDot } from "@/components/PresenceDot";
 import { isOnline, lastSeenLabel } from "@/lib/presence";
 import { MediaViewer, type ViewerMedia } from "@/components/MediaViewer";
 import { LumenVideo } from "@/components/LumenVideo";
+import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { BubbleSkeleton } from "@/components/Skeleton";
 
 export const Route = createFileRoute("/messages/$id")({
@@ -287,9 +288,10 @@ function ChatPage() {
     setMenuFor(null);
   }
 
-  async function send(e: React.FormEvent) {
-    e.preventDefault();
-    const content = text.trim();
+  async function send(e?: React.FormEvent, voice?: File) {
+    e?.preventDefault();
+    const pendingFile = voice ?? pendingFileState;
+    const content = voice ? "" : text.trim();
     if (!me || (!content && !pendingFile)) return;
     setSending(true);
     try {
@@ -300,12 +302,13 @@ function ChatPage() {
         const isImage = pendingFile.type.startsWith("image/");
         const isVideo = pendingFile.type.startsWith("video/");
         const isPdf = pendingFile.type === "application/pdf";
-        if (!isImage && !isVideo && !isPdf) throw new Error("Only photos, videos and PDF files can be sent");
+        const isAudio = pendingFile.type.startsWith("audio/");
+        if (!isImage && !isVideo && !isPdf && !isAudio) throw new Error("Only photos, videos and PDF files can be sent");
         if (isVideo && pendingFile.size > MAX_VIDEO_BYTES) throw new Error("Video is too large (max 50MB)");
         if (!isVideo && pendingFile.size > MAX_UPLOAD_BYTES) throw new Error("File is too large (max 10MB)");
         const toSend = isImage ? await compressImage(pendingFile) : pendingFile;
         attachment_url = await uploadUserFile(me, toSend, "chat");
-        attachment_type = isImage ? "image" : isVideo ? "video" : "pdf";
+        attachment_type = isImage ? "image" : isVideo ? "video" : isAudio ? "audio" : "pdf";
         attachment_name = toSend.name;
       }
       const { data, error } = await (supabase as any)
@@ -324,8 +327,10 @@ function ChatPage() {
         .select(MSG_COLUMNS)
         .maybeSingle();
       if (error) throw error;
-      setText("");
-      setPendingFile(null);
+      if (!voice) {
+        setText("");
+        setPendingFile(null);
+      }
       setReplyTo(null);
       if (fileInput.current) fileInput.current.value = "";
       const m = data as Msg | null;
@@ -492,6 +497,9 @@ function ChatPage() {
                           />
                         </div>
                       )}
+                      {url && m.attachment_type === "audio" && (
+                        <audio src={url} controls preload="metadata" className="mb-1 h-10 w-[230px] max-w-full" />
+                      )}
                       {url && m.attachment_type === "pdf" && (
                         <a
                           href={url}
@@ -653,6 +661,7 @@ function ChatPage() {
               }}
             />
           </label>
+          <div className="relative flex-1 flex items-center gap-2">
           <input
             value={text}
             onChange={(e) => {
@@ -661,8 +670,10 @@ function ChatPage() {
             }}
             placeholder="Message…"
             maxLength={1000}
-            className="flex-1 rounded-full border border-border bg-card px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+            className="flex-1 min-w-0 rounded-full border border-border bg-card px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
           />
+          <VoiceRecorder disabled={sending} onRecorded={(f) => void send(undefined, f)} />
+          </div>
           <button
             type="submit"
             disabled={sending || (!text.trim() && !pendingFile)}
