@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { X, Eye } from "lucide-react";
+import { X, Eye, Send } from "lucide-react";
+import { toast } from "sonner";
+import { sendQuickReply } from "@/lib/quickReply";
 import { supabase } from "@/integrations/supabase/client";
 import { getSignedUrl } from "@/lib/storage";
 import { LumenAvatar } from "@/components/LumenAvatar";
@@ -24,6 +26,8 @@ export function StoryViewer({
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [viewers, setViewers] = useState<{ id: string; name: string | null }[]>([]);
   const [showViewers, setShowViewers] = useState(false);
+  const [reply, setReply] = useState("");
+  const [sendingReply, setSendingReply] = useState(false);
   const story = stories[index];
   const isOwner = !!meId && !!story && story.user_id === meId;
 
@@ -48,6 +52,21 @@ export function StoryViewer({
   }, [story?.id, isOwner]);
 
   if (!story) return null;
+
+  async function sendReply(content: string) {
+    if (!meId || !story || sendingReply) return;
+    setSendingReply(true);
+    try {
+      const quote = story.text_content || (story.kind === "video" ? "🎬 Video moment" : story.kind === "photo" ? "📷 Photo moment" : "✨ Moment");
+      await sendQuickReply({ from: meId, to: story.user_id, kind: "story", quote, content });
+      setReply("");
+      toast.success("Reply sent");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't send reply");
+    } finally {
+      setSendingReply(false);
+    }
+  }
 
   function step(dir: 1 | -1) {
     const next = index + dir;
@@ -121,6 +140,36 @@ export function StoryViewer({
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {!isOwner && meId && (
+        <div className="border-t border-white/10 px-3 py-2 space-y-2">
+          <div className="flex justify-center gap-3">
+            {["❤️", "🔥", "😂", "👏"].map((e) => (
+              <button key={e} disabled={sendingReply} onClick={() => sendReply(e)} className="text-2xl transition hover:scale-125 disabled:opacity-50" aria-label={`React ${e}`}>
+                {e}
+              </button>
+            ))}
+          </div>
+          <form
+            onSubmit={(ev) => {
+              ev.preventDefault();
+              void sendReply(reply);
+            }}
+            className="flex items-center gap-2"
+          >
+            <input
+              value={reply}
+              onChange={(e) => setReply(e.target.value)}
+              maxLength={500}
+              placeholder={`Reply to ${authorName || "this moment"}…`}
+              className="flex-1 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm text-white placeholder:text-white/60 outline-none"
+            />
+            <button type="submit" disabled={sendingReply || !reply.trim()} aria-label="Send reply" className="grid h-9 w-9 place-items-center rounded-full text-white disabled:opacity-50" style={{ background: "var(--gradient-glow)" }}>
+              <Send size={15} />
+            </button>
+          </form>
         </div>
       )}
 

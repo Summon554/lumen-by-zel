@@ -55,13 +55,7 @@ function AccountPage() {
         navigate({ to: "/login", replace: true });
         return;
       }
-      const { data } = await (supabase as any)
-        .from("profiles")
-        .select(
-          "id,name,email,birthdate,is_minor,guardian_email,guardian_verified,strikes,suspended_until,deletion_requested_at",
-        )
-        .eq("id", auth.user.id)
-        .maybeSingle();
+      const { data } = await (supabase as any).rpc("get_my_private_profile").maybeSingle();
       setProfile(data as Profile);
       setGuardianEmail((data as Profile)?.guardian_email ?? "");
       setLoading(false);

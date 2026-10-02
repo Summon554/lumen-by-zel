@@ -112,7 +112,7 @@ function ProfilePage() {
       setUserId(data.user.id);
       setEmail(data.user.email ?? null);
       const [{ data: profile }, { data: postRows }, followersRes, followingRes, followerIdsRes, followingIdsRes] = await Promise.all([
-        supabase.from("profiles").select("*").eq("id", data.user.id).maybeSingle(),
+        supabase.from("profiles").select("id,name,username,bio,avatar_url,cover_url,account_type,is_founder,is_private,created_at").eq("id", data.user.id).maybeSingle(),
         supabase
           .from("posts")
           .select("id,image_url,caption,created_at")
