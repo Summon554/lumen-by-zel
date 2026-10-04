@@ -628,6 +628,7 @@ export type Database = {
           edited_at: string | null
           id: string
           image_url: string | null
+          media_paths: string[]
           shared_post_id: string | null
           user_id: string
         }
@@ -637,6 +638,7 @@ export type Database = {
           edited_at?: string | null
           id?: string
           image_url?: string | null
+          media_paths?: string[]
           shared_post_id?: string | null
           user_id: string
         }
@@ -646,6 +648,7 @@ export type Database = {
           edited_at?: string | null
           id?: string
           image_url?: string | null
+          media_paths?: string[]
           shared_post_id?: string | null
           user_id?: string
         }
@@ -892,6 +895,71 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      story_highlight_items: {
+        Row: {
+          highlight_id: string
+          position: number
+          story_id: string
+        }
+        Insert: {
+          highlight_id: string
+          position?: number
+          story_id: string
+        }
+        Update: {
+          highlight_id?: string
+          position?: number
+          story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_highlight_items_highlight_id_fkey"
+            columns: ["highlight_id"]
+            isOneToOne: false
+            referencedRelation: "story_highlights"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "story_highlight_items_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_highlights: {
+        Row: {
+          cover_story_id: string | null
+          created_at: string
+          id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          cover_story_id?: string | null
+          created_at?: string
+          id?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          cover_story_id?: string | null
+          created_at?: string
+          id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_highlights_cover_story_id_fkey"
+            columns: ["cover_story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       story_views: {
         Row: {
