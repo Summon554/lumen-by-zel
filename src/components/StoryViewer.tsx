@@ -14,12 +14,14 @@ export function StoryViewer({
   authorName,
   authorAvatar,
   meId,
+  isHighlight = false,
   onClose,
 }: {
   stories: StoryRow[];
   authorName: string | null;
   authorAvatar: string | null;
   meId: string | null;
+  isHighlight?: boolean;
   onClose: () => void;
 }) {
   const [index, setIndex] = useState(0);
@@ -82,7 +84,7 @@ export function StoryViewer({
         <div className="flex-1">
           <p className="text-sm font-medium text-white">{authorName || "Lumen friend"}</p>
           <p className="text-[11px] text-white/70">
-            {timeLeft(story.expires_at)} · {STORY_PRIVACY_LABELS[story.privacy]}
+            {isHighlight ? "Highlight" : timeLeft(story.expires_at)} · {STORY_PRIVACY_LABELS[story.privacy]}
           </p>
         </div>
         <button onClick={onClose} aria-label="Close story" className="grid h-9 w-9 place-items-center rounded-full text-white hover:bg-white/10">
