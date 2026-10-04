@@ -8,6 +8,13 @@
       "when": 1790950182924,
       "tag": "0000_profiles_private_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791087734764,
+      "tag": "0001_clips_carousels_story_highlights",
+      "breakpoints": true
     }
   ]
 }
