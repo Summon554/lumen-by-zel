@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { StoryHighlights } from "@/components/StoryHighlights";
 import { toast } from "sonner";
 import { ArrowLeft, Play, Sparkles } from "lucide-react";
 import { getSignedUrl, getSignedUrls, isVideoPath } from "@/lib/storage";
@@ -247,6 +248,7 @@ function UserProfilePage() {
         </div>
       </section>
 
+      { <StoryHighlights userId={profile.id} meId={meId} name={profile.name || null} avatar={avatarUrl} />}
       <section className="max-w-lg mx-auto px-4 mt-8">
         <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">Posts</h2>
         {profile.is_private && !isFollowing ? (

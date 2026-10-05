@@ -1,5 +1,5 @@
-- [ ] Lumen Clips vertical video feed and navigation
-- [ ] Multi-photo carousel creation and display
-- [ ] Story Highlights creation and viewing with privacy checks
-- [ ] Who Encouraged list with follow controls
-- [ ] Verify security, types, and mobile interaction
+- [x] Lumen Clips vertical video feed and navigation
+- [x] Multi-photo carousel creation and display
+- [x] Story Highlights creation and viewing with privacy checks
+- [x] Who Encouraged list with follow controls
+- [x] Verify security, types, and mobile interaction
