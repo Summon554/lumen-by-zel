@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { StoryHighlights } from "@/components/StoryHighlights";
 import { toast } from "sonner";
 import { ArrowLeft, Camera, ImagePlus, Play, Sparkles } from "lucide-react";
 import { getSignedUrl, getSignedUrls, uploadUserFile, isVideoPath } from "@/lib/storage";
@@ -356,6 +357,7 @@ function ProfilePage() {
         </div>
       </section>
 
+      {userId && <StoryHighlights userId={userId} meId={userId} name={name || null} avatar={avatarUrl} />}
       <section className="max-w-lg mx-auto px-4 mt-8">
         <div className="flex items-center gap-1 border-b border-border mb-3 overflow-x-auto">
           {(

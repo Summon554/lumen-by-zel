@@ -30,6 +30,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { LumenAvatar } from "@/components/LumenAvatar";
 import { MediaViewer, type ViewerMedia } from "@/components/MediaViewer";
 import { LumenVideo } from "@/components/LumenVideo";
+import { WhoEncouraged } from "@/components/WhoEncouraged";
 import { PostSkeleton } from "@/components/Skeleton";
 import {
   applyReaction,
@@ -60,6 +61,7 @@ type PostRow = {
   user_id: string;
   caption: string | null;
   image_url: string | null;
+  media_paths?: string[] | null;
   created_at: string;
   shared_post_id?: string | null;
   edited_at?: string | null;
@@ -83,6 +85,7 @@ function HomePage() {
   const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
   const [caption, setCaption] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [photos, setPhotos] = useState<File[]>([]);
   const [posting, setPosting] = useState(false);
   const [tab, setTab] = useState<"forYou" | "following">("forYou");
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
@@ -158,6 +161,7 @@ function HomePage() {
 
       const paths = [
         ...(list.map((p) => p.image_url).filter(Boolean) as string[]),
+        ...list.flatMap((p) => p.media_paths ?? []),
         ...((profs ?? []).map((p) => p.avatar_url).filter(Boolean) as string[]),
       ];
       setSignedUrls(await getSignedUrls(paths));
@@ -250,7 +254,7 @@ function HomePage() {
   async function handleCreatePost(e: React.FormEvent) {
     e.preventDefault();
     if (!userId) return;
-    if (!caption.trim() && !file) {
+    if (!caption.trim() && !file && !photos.length) {
       toast.error("Add a photo or a thought");
       return;
     }
@@ -263,7 +267,11 @@ function HomePage() {
         return;
       }
       let imagePath: string | null = null;
-      if (file) {
+      let mediaPaths: string[] = [];
+      if (photos.length) {
+        mediaPaths = await Promise.all(photos.map(async (f) => uploadUserFile(userId, await compressImage(f), "posts")));
+        imagePath = mediaPaths[0];
+      } else if (file) {
         const toUpload = file.type.startsWith("image/") ? await compressImage(file) : file;
         imagePath = await uploadUserFile(userId, toUpload, "posts");
       }
@@ -271,10 +279,12 @@ function HomePage() {
         user_id: userId,
         caption: caption.trim() || null,
         image_url: imagePath,
-      });
+        media_paths: mediaPaths,
+      } as any);
       if (error) throw error;
       setCaption("");
       setFile(null);
+      setPhotos([]);
       await refresh(userId);
       toast.success("Shared ✨");
     } catch (err) {
@@ -557,6 +567,7 @@ function HomePage() {
             className="w-full resize-none bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
           />
           {file && <p className="text-xs text-muted-foreground truncate">📎 {file.name}</p>}
+          {photos.length > 0 && <p className="text-xs text-muted-foreground">🖼 {photos.length} photos selected</p>}
           <div className="flex items-center justify-between">
             <label className="inline-flex items-center gap-1.5 text-sm text-muted-foreground cursor-pointer hover:text-foreground">
               <ImageIcon size={16} />
@@ -564,9 +575,19 @@ function HomePage() {
               <input
                 type="file"
                 accept="image/*,video/*"
+                multiple
                 className="hidden"
                 onChange={(e) => {
-                  const f = e.target.files?.[0] ?? null;
+                  const all = Array.from(e.target.files ?? []);
+                  if (all.length > 1) {
+                    const imgs = all.filter((x) => x.type.startsWith("image/"));
+                    if (imgs.length !== all.length) { toast.error("Multiple selection supports photos only"); return; }
+                    if (imgs.length > 5) toast.message("Up to 5 photos — using the first 5");
+                    if (imgs.some((x) => x.size > MAX_UPLOAD_BYTES)) { toast.error("Each photo max 10MB"); return; }
+                    setFile(null); setPhotos(imgs.slice(0, 5)); return;
+                  }
+                  setPhotos([]);
+                  const f = all[0] ?? null;
                   if (f) {
                     const isVideo = f.type.startsWith("video/");
                     if (f.size > (isVideo ? MAX_VIDEO_BYTES : MAX_UPLOAD_BYTES)) {
@@ -668,6 +689,7 @@ function HomePage() {
             onLocalCommentLikeChange={localChangeCommentLike}
             onToggleFollow={() => toggleFollow(post.user_id)}
             onOpenMedia={setViewer}
+            mediaUrls={(post.media_paths ?? []).map((m) => signedUrls[m]).filter(Boolean)}
           />
         ))}
       </div>
@@ -726,7 +748,9 @@ function PostCard({
   onLocalCommentLikeChange,
   onToggleFollow,
   onOpenMedia,
+  mediaUrls = [],
 }: {
+  mediaUrls?: string[];
   post: PostRow;
   me: string | null;
   saved: boolean;
@@ -765,6 +789,7 @@ function PostCard({
   );
   const isMine = me === post.user_id;
   const founder = !!author?.is_founder;
+  const [showLikers, setShowLikers] = useState(false);
 
   return (
     <article className="rounded-2xl border border-border bg-card/70 backdrop-blur overflow-hidden">
@@ -802,7 +827,9 @@ function PostCard({
           onBlockedChange={onBlockedChange}
         />
       </header>
-      {imageUrl &&
+      {mediaUrls.length > 1 ? (
+        <Carousel urls={mediaUrls} alt={post.caption ?? "Lumen post"} onOpen={(u) => onOpenMedia({ url: u, type: "image" })} />
+      ) : imageUrl &&
         (isVideoPath(post.image_url) ? (
           <div className="px-3 pb-2">
             <LumenVideo src={imageUrl} onExpand={() => onOpenMedia({ url: imageUrl, type: "video" })} />
@@ -845,7 +872,9 @@ function PostCard({
           <span className={likeState.likedByMe ? "text-primary font-medium" : ""}>
             {likeState.likedByMe ? "Encouraged" : "Encourage"}
           </span>
-          <span>{likeState.count}</span>
+        </button>
+        <button type="button" onClick={() => setShowLikers(true)} className="-ml-2 text-muted-foreground hover:text-primary underline-offset-2 hover:underline" aria-label="See who encouraged">
+          {likeState.count}
         </button>
         <button onClick={onToggleOpen} className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition">
           <MessageCircle size={18} />
@@ -875,6 +904,30 @@ function PostCard({
           />
         </div>
       )}
+      {showLikers && <WhoEncouraged postId={post.id} meId={me} onClose={() => setShowLikers(false)} />}
     </article>
+  );
+}
+
+function Carousel({ urls, alt, onOpen }: { urls: string[]; alt: string; onOpen: (u: string) => void }) {
+  const [i, setI] = useState(0);
+  return (
+    <div className="relative">
+      <div
+        className="flex overflow-x-auto snap-x snap-mandatory scrollbar-none"
+        style={{ scrollbarWidth: "none" }}
+        onScroll={(e) => { const el = e.currentTarget; setI(Math.round(el.scrollLeft / el.clientWidth)); }}
+      >
+        {urls.map((u, k) => (
+          <button key={k} type="button" className="w-full shrink-0 snap-center" onClick={() => onOpen(u)}>
+            <img src={u} alt={`${alt} ${k + 1}`} loading="lazy" className="w-full aspect-square object-cover" />
+          </button>
+        ))}
+      </div>
+      <span className="absolute top-2 right-2 rounded-full bg-background/70 px-2 py-0.5 text-xs text-foreground">{i + 1}/{urls.length}</span>
+      <div className="flex justify-center gap-1.5 py-2">
+        {urls.map((_, k) => <span key={k} className={`h-1.5 w-1.5 rounded-full transition ${k === i ? "bg-primary shadow-[var(--shadow-glow)]" : "bg-muted-foreground/40"}`} />)}
+      </div>
+    </div>
   );
 }
