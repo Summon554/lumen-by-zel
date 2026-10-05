@@ -16,6 +16,7 @@ import {
   Feather,
   Bookmark,
   Pencil,
+  Clapperboard,
 } from "lucide-react";
 
 import { getSignedUrls, uploadUserFile, compressImage, MAX_VIDEO_BYTES, MAX_UPLOAD_BYTES } from "@/lib/storage";
@@ -506,6 +507,9 @@ function HomePage() {
             </Link>
           </div>
           <div className="flex items-center gap-1">
+            <Link to="/clips" className="h-9 w-9 grid place-items-center rounded-full hover:bg-accent transition" aria-label="Clips">
+              <Clapperboard size={18} />
+            </Link>
             <Link
               to="/search" search={{ q: undefined }}
               className="h-9 w-9 grid place-items-center rounded-full hover:bg-accent transition"
