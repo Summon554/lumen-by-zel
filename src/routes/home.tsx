@@ -25,7 +25,8 @@ import { CommentThread, type ThreadComment, type CommentLikeState } from "@/comp
 import { ReactionBar } from "@/components/ReactionBar";
 import { UserActionMenu } from "@/components/UserActionMenu";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
-import { DailyHighlight } from "@/components/DailyHighlight";
+import { DailySpark, type Spark } from "@/components/DailySpark";
+import { Button } from "@/components/ui/button";
 import { StoriesBar } from "@/components/StoriesBar";
 import { EmptyState } from "@/components/EmptyState";
 import { LumenAvatar } from "@/components/LumenAvatar";
@@ -85,6 +86,7 @@ function HomePage() {
   const [commentLikes, setCommentLikes] = useState<Record<string, CommentLikeState>>({});
   const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
   const [caption, setCaption] = useState("");
+  const [responseSpark, setResponseSpark] = useState<Spark | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [photos, setPhotos] = useState<File[]>([]);
   const [posting, setPosting] = useState(false);
@@ -281,11 +283,13 @@ function HomePage() {
         caption: caption.trim() || null,
         image_url: imagePath,
         media_paths: mediaPaths,
+        spark_day: responseSpark?.spark_day ?? null,
       } as any);
       if (error) throw error;
       setCaption("");
       setFile(null);
       setPhotos([]);
+      setResponseSpark(null);
       await refresh(userId);
       toast.success("Shared ✨");
     } catch (err) {
@@ -556,14 +560,21 @@ function HomePage() {
 
       <div className="max-w-lg mx-auto px-4 pt-5 space-y-5">
         <StoriesBar meId={userId} />
-        <DailyHighlight />
+        <DailySpark onRespond={(spark) => {
+          setResponseSpark(spark);
+          document.getElementById("spark-composer")?.scrollIntoView({ behavior: "smooth", block: "center" });
+          document.getElementById("spark-caption")?.focus();
+        }} />
 
         <form
+          id="spark-composer"
           onSubmit={handleCreatePost}
           className="rounded-2xl border border-border bg-card/70 backdrop-blur p-4 space-y-3"
         >
+          {responseSpark && <div className="flex items-center justify-between gap-2 border-b border-primary/30 pb-2"><p className="text-xs text-primary">Daily Spark · {responseSpark.question}</p><Button type="button" variant="ghost" size="sm" onClick={() => setResponseSpark(null)}>Cancel</Button></div>}
           <textarea
-            placeholder="What's on your mind?"
+            id="spark-caption"
+            placeholder={responseSpark ? "Your spark response…" : "What's on your mind?"}
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
             rows={2}

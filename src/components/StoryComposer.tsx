@@ -6,6 +6,7 @@ import { compressImage, uploadUserFile } from "@/lib/storage";
 import { LUMEN_LIBRARY, MAX_CLIP_SECONDS } from "@/lib/music";
 import { LumenAvatar } from "@/components/LumenAvatar";
 import { moderate } from "@/lib/moderation";
+import { Button } from "@/components/ui/button";
 import {
   STORY_BACKGROUNDS,
   STORY_PRIVACY_LABELS,
@@ -34,8 +35,11 @@ export function StoryComposer({
   const [kind, setKind] = useState<StoryKind>("photo");
   const [file, setFile] = useState<File | null>(null);
   const [text, setText] = useState("");
-  const [background, setBackground] = useState(STORY_BACKGROUNDS[0]!);
-  const [trackId, setTrackId] = useState(LUMEN_LIBRARY[0]!.id);
+  const [background, setBackground] = useState(STORY_BACKGROUNDS[0] ?? "var(--gradient-glow)");
+  const [trackId, setTrackId] = useState(LUMEN_LIBRARY[0]?.id ?? "");
+  const [pollEditing, setPollEditing] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState<[string, string]>(["", ""]);
   const [privacy, setPrivacy] = useState<StoryPrivacy>(defaultPrivacy);
   const [saveDefault, setSaveDefault] = useState(false);
   const [stickers, setStickers] = useState<Sticker[]>([]);
@@ -64,7 +68,7 @@ export function StoryComposer({
 
   async function submit() {
     if (busy) return;
-    const check = moderate(text);
+    const check = moderate([text, ...stickers.filter(s => s.kind === "poll").flatMap(s => s.kind === "poll" ? [s.question, ...s.options] : [])].join(" "));
     if (!check.ok) {
       toast.error(check.message ?? "This can't be posted.");
       return;
@@ -86,7 +90,8 @@ export function StoryComposer({
       }
       let music = null as null | { title: string; artist: string; startSec: number; endSec: number };
       if (kind === "music") {
-        const track = LUMEN_LIBRARY.find((t) => t.id === trackId)!;
+        const track = LUMEN_LIBRARY.find((t) => t.id === trackId);
+        if (!track) throw new Error("Choose a music track first.");
         music = { title: track.title, artist: track.artist, startSec: 0, endSec: MAX_CLIP_SECONDS };
       }
       const { error } = await (supabase as any).from("stories").insert({
@@ -230,11 +235,10 @@ export function StoryComposer({
                 if (v) addSticker({ kind: "location", label: v });
               }} />
               <StickerBtn icon={<BarChart3 size={13} />} label="Poll" onClick={() => {
-                const q = window.prompt("Poll question");
-                if (!q) return;
-                const a = window.prompt("Option 1") || "Yes";
-                const b = window.prompt("Option 2") || "No";
-                addSticker({ kind: "poll", question: q, options: [a, b] });
+                const poll = stickers.find(s => s.kind === "poll");
+                setPollQuestion(poll?.kind === "poll" ? poll.question : "");
+                setPollOptions(poll?.kind === "poll" ? poll.options : ["", ""]);
+                setPollEditing(true);
               }} />
               <StickerBtn icon={<Timer size={13} />} label="Countdown" onClick={() => {
                 const l = window.prompt("Counting down to…");
@@ -247,6 +251,16 @@ export function StoryComposer({
                 if (p) addSticker({ kind: "question", prompt: p });
               }} />
             </div>
+            {pollEditing && <div className="mt-3 space-y-2 border-t border-border pt-3">
+              <label className="block text-xs">Poll question<input value={pollQuestion} onChange={e => setPollQuestion(e.target.value)} maxLength={120} className="mt-1 w-full rounded-md border border-input bg-background p-2" /></label>
+              {pollOptions.map((option, i) => <label key={i} className="block text-xs">Option {i + 1}<input value={option} onChange={e => setPollOptions(prev => i === 0 ? [e.target.value, prev[1]] : [prev[0], e.target.value])} maxLength={60} className="mt-1 w-full rounded-md border border-input bg-background p-2" /></label>)}
+              <div className="flex justify-end gap-2"><Button variant="ghost" size="sm" onClick={() => setPollEditing(false)}>Cancel</Button><Button size="sm" disabled={!pollQuestion.trim() || !pollOptions[0].trim() || !pollOptions[1].trim()} onClick={() => {
+                const options: [string, string] = [pollOptions[0].trim(), pollOptions[1].trim()];
+                if (options[0].toLowerCase() === options[1].toLowerCase()) { toast.error("Use two different options"); return; }
+                setStickers(prev => [...prev.filter(s => s.kind !== "poll"), { kind: "poll", question: pollQuestion.trim(), options }]);
+                setPollEditing(false);
+              }}>Save Poll</Button></div>
+            </div>}
             {stickers.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {stickers.map((s, i) => (

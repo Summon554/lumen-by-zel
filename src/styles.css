@@ -47,6 +47,8 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-ring-offset-background: var(--background);
+  --color-qr-paper: var(--qr-paper);
+  --color-qr-ink: var(--qr-ink);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -63,6 +65,8 @@
 }
 
 :root {
+  --qr-paper: oklch(1 0 0);
+  --qr-ink: oklch(0.18 0 0);
   --radius: 0.625rem;
   --background: oklch(0.99 0.008 230);
   --foreground: oklch(0.22 0.05 240);
@@ -262,3 +266,7 @@
 @utility animate-story-sparkle {
   animation: story-sparkle 1.6s ease-in-out infinite;
 }
+
+.glow-card { box-shadow: inset 0 0 35px color-mix(in oklch, var(--primary) 12%, transparent); }
+.poll-fill { transition: width 650ms ease-out; box-shadow: 0 0 12px color-mix(in oklch, var(--primary) 35%, transparent); }
+@media (prefers-reduced-motion: reduce) { .poll-fill { transition: none; } }
