@@ -15,6 +15,13 @@
       "when": 1791087734764,
       "tag": "0001_clips_carousels_story_highlights",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791451507917,
+      "tag": "0002_daily_spark_and_story_polls",
+      "breakpoints": true
     }
   ]
 }

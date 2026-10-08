@@ -1,5 +1,4 @@
-- [x] Lumen Clips vertical video feed and navigation
-- [x] Multi-photo carousel creation and display
-- [x] Story Highlights creation and viewing with privacy checks
-- [x] Who Encouraged list with follow controls
-- [x] Verify security, types, and mobile interaction
+- [ ] Daily Spark banner, linked responses and community feed
+- [ ] Downloadable/shareable profile Glow Card with QR
+- [ ] Interactive two-option story polls with one vote per story
+- [ ] Verify access rules and desktop/mobile interactions
