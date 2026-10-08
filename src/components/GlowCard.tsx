@@ -49,7 +49,7 @@ export function GlowCard(props: Props) {
   return <><Button variant="outline" size="sm" onClick={() => void show()}><Share2/> Share Glow Card</Button>
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[92dvh] w-[calc(100%-2rem)] max-w-sm overflow-y-auto rounded-lg p-4">
       <DialogTitle className="pr-6">Your Glow Card</DialogTitle><DialogDescription className="sr-only">Share {props.name || props.username}'s Lumen profile</DialogDescription>
-      <div ref={card} className="glow-card relative overflow-hidden rounded-lg border border-primary/50 bg-background px-5 py-6 text-center">
+      <div ref={card} className="dark glow-card relative overflow-hidden rounded-lg border border-primary/50 bg-background px-5 py-6 text-center text-foreground">
         <div className="mb-5 flex items-center justify-between text-primary"><span className="flex items-center gap-1.5 text-sm font-bold"><Sparkles size={16}/> LUMEN</span><span className="text-[10px] uppercase">Glow Card</span></div>
         <LumenAvatar size={72} name={props.name} url={props.avatar}/>
         <h2 className="mt-4 break-words text-lg font-semibold">{props.name || "Lumen friend"}</h2>
