@@ -14,6 +14,8 @@ export const Route = createFileRoute("/signup")({
       { name: "description", content: "Join Lumen and share luminous moments." },
       { property: "og:title", content: "Create account — Lumen" },
       { property: "og:description", content: "Join Lumen and share luminous moments." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: SignupPage,

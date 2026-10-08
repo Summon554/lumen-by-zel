@@ -11,3 +11,6 @@
 
 - Store carousel media paths on posts while preserving the original image URL for older readers; this keeps existing posts and consumers compatible.
 - Store highlights as owner-scoped collections of existing story IDs and enforce original story audiences for expired stories; this prevents highlights from widening story privacy.
+- Resolve the daily Spark date and curated question in the database using Manila time, and link responses through posts.spark_day; this keeps all clients on the same community day without scheduled jobs.
+- Store immutable poll votes by story and voter with a composite primary key and story-audience RLS; this prevents duplicate voting and audience leaks.
+- Generate QR codes and Glow Card PNG exports locally from safe profile fields; this avoids external QR services and preserves profile privacy.

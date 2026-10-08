@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { StoryHighlights } from "@/components/StoryHighlights";
+import { GlowCard } from "@/components/GlowCard";
 import { toast } from "sonner";
 import { ArrowLeft, Camera, ImagePlus, Play, Sparkles } from "lucide-react";
 import { getSignedUrl, getSignedUrls, uploadUserFile, isVideoPath } from "@/lib/storage";
@@ -48,6 +49,7 @@ function ProfilePage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const [name, setName] = useState("");
+  const [profileUsername, setProfileUsername] = useState<string | null>(null);
   const [bio, setBio] = useState("");
   const [avatarPath, setAvatarPath] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -126,6 +128,7 @@ function ProfilePage() {
         (supabase as any).from("follows").select("following_id").eq("follower_id", data.user.id),
       ]);
       setName(profile?.name ?? "");
+      setProfileUsername(profile?.username ?? null);
       setBio(profile?.bio ?? "");
       setAvatarPath(profile?.avatar_url ?? null);
       setIsPrivate(Boolean((profile as any)?.is_private));
@@ -304,6 +307,7 @@ function ProfilePage() {
           {!editing ? (
             <>
               {bio && <p className="text-sm text-muted-foreground max-w-xs">{bio}</p>}
+              {userId && <GlowCard id={userId} name={name} username={profileUsername || username} bio={bio} avatar={avatarUrl} followers={followers} founder={founder} />}
 
               <button
                 onClick={() => setEditing(true)}

@@ -15,6 +15,8 @@ export const Route = createFileRoute("/notifications")({
       { name: "description", content: "Your Lumen activity." },
       { property: "og:title", content: "Notifications — Lumen" },
       { property: "og:description", content: "Your Lumen activity." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: NotificationsPage,

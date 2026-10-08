@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-r
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { StoryHighlights } from "@/components/StoryHighlights";
+import { GlowCard } from "@/components/GlowCard";
 import { toast } from "sonner";
 import { ArrowLeft, Play, Sparkles } from "lucide-react";
 import { getSignedUrl, getSignedUrls, isVideoPath } from "@/lib/storage";
@@ -15,10 +16,12 @@ export const Route = createFileRoute("/u/$id")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Profile — Lumen" },
+      { title: "Community Profile — Lumen" },
       { name: "description", content: "A Lumen profile." },
-      { property: "og:title", content: "Profile — Lumen" },
+      { property: "og:title", content: "Community Profile — Lumen" },
       { property: "og:description", content: "A Lumen profile." },
+      { property: "og:type", content: "profile" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: UserProfilePage,
@@ -28,6 +31,7 @@ type Post = { id: string; image_url: string | null; caption: string | null; crea
 type Profile = {
   id: string;
   name: string | null;
+  username: string | null;
   bio: string | null;
   is_founder: boolean | null;
   avatar_url: string | null;
@@ -64,7 +68,7 @@ function UserProfilePage() {
       }
       setMeId(auth.user.id);
       const [{ data: prof }, { data: postRows }, followersRes, followingRes, meFollowsRes, meReqRes, blockRes] = await Promise.all([
-        supabase.from("profiles").select("id,name,bio,is_founder,avatar_url,is_private,last_seen_at").eq("id", id).maybeSingle(),
+        supabase.from("profiles").select("id,name,username,bio,is_founder,avatar_url,is_private,last_seen_at").eq("id", id).maybeSingle(),
         supabase.from("posts").select("id,image_url,caption,created_at").eq("user_id", id).order("created_at", { ascending: false }).limit(9),
         (supabase as any).from("follows").select("*", { count: "exact", head: true }).eq("following_id", id),
         (supabase as any).from("follows").select("*", { count: "exact", head: true }).eq("follower_id", id),
@@ -245,6 +249,7 @@ function UserProfilePage() {
               You blocked this person. They can't message, comment on your posts, or follow you.
             </p>
           )}
+          {!blocked && <GlowCard id={profile.id} name={profile.name} username={profile.username || "lumen-friend"} bio={profile.bio} avatar={avatarUrl} followers={followers} founder={!!profile.is_founder} />}
         </div>
       </section>
 

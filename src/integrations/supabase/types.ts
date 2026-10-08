@@ -630,6 +630,7 @@ export type Database = {
           image_url: string | null
           media_paths: string[]
           shared_post_id: string | null
+          spark_day: string | null
           user_id: string
         }
         Insert: {
@@ -640,6 +641,7 @@ export type Database = {
           image_url?: string | null
           media_paths?: string[]
           shared_post_id?: string | null
+          spark_day?: string | null
           user_id: string
         }
         Update: {
@@ -650,6 +652,7 @@ export type Database = {
           image_url?: string | null
           media_paths?: string[]
           shared_post_id?: string | null
+          spark_day?: string | null
           user_id?: string
         }
         Relationships: [
@@ -961,6 +964,35 @@ export type Database = {
           },
         ]
       }
+      story_poll_votes: {
+        Row: {
+          created_at: string
+          option_index: number
+          story_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          option_index: number
+          story_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          option_index?: number
+          story_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_poll_votes_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       story_views: {
         Row: {
           created_at: string
@@ -1115,6 +1147,13 @@ export type Database = {
           suspended_until: string
         }[]
       }
+      current_daily_spark: {
+        Args: never
+        Returns: {
+          question: string
+          spark_day: string
+        }[]
+      }
       get_my_private_profile: {
         Args: never
         Returns: {
@@ -1127,6 +1166,13 @@ export type Database = {
           is_minor: boolean
           strikes: number
           suspended_until: string
+        }[]
+      }
+      story_poll_results: {
+        Args: { p_story_id: string }
+        Returns: {
+          option_index: number
+          votes: number
         }[]
       }
     }
