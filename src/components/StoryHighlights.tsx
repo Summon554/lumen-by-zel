@@ -47,7 +47,8 @@ export function StoryHighlights({ userId, meId, name, avatar }: { userId: string
 
   async function openCreator() {
     setCreating(true);
-    const { data } = await (supabase as any).from("stories").select("*").eq("user_id", userId).lte("expires_at", new Date().toISOString()).eq("held_for_moderation", false).order("created_at", { ascending: false }).limit(100);
+    // Active and archived moments are both eligible.
+    const { data } = await (supabase as any).from("stories").select("*").eq("user_id", userId).eq("held_for_moderation", false).order("created_at", { ascending: false }).limit(100);
     const rows = (data ?? []) as StoryRow[];
     setArchive(rows);
     setUrls((prev) => ({ ...prev }));

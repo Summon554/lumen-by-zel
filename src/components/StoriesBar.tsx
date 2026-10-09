@@ -17,6 +17,11 @@ export function StoriesBar({ meId }: { meId: string | null }) {
   const [defaultPrivacy, setDefaultPrivacy] = useState<StoryPrivacy>("public");
   const [me, setMe] = useState<{ name: string | null; avatar: string | null }>({ name: null, avatar: null });
   const [streak, setStreak] = useState(0);
+  useEffect(() => {
+    const open = () => setComposing(true);
+    window.addEventListener("lumen:new-moment", open);
+    return () => window.removeEventListener("lumen:new-moment", open);
+  }, []);
 
   const load = useCallback(async () => {
     if (!meId) return;

@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getSignedUrls } from "@/lib/storage";
-import { ArrowLeft, Bell, Heart, MessageCircle, UserPlus } from "lucide-react";
+import { ArrowLeft, Bell, BarChart3, Heart, MessageCircle, UserPlus } from "lucide-react";
 import { isFounder } from "@/lib/founder";
 import { FounderBadge } from "@/components/FounderBadge";
 import { EmptyState } from "@/components/EmptyState";
@@ -26,7 +26,7 @@ type Notif = {
   id: string;
   user_id: string;
   actor_id: string;
-  type: "like" | "follow" | "follow_request" | "comment" | "comment_reply" | "comment_like";
+  type: "like" | "follow" | "follow_request" | "comment" | "comment_reply" | "comment_like" | "reaction" | "share" | "story_reply" | "poll_vote";
   post_id: string | null;
   read: boolean;
   created_at: string;
@@ -41,6 +41,7 @@ function NotificationsPage() {
   const [avatars, setAvatars] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
     (async () => {
       const { data: auth } = await supabase.auth.getUser();
       if (!auth.user) {
@@ -75,7 +76,21 @@ function NotificationsPage() {
         await (supabase as any).from("notifications").update({ read: true }).in("id", unread);
       }
       setLoading(false);
+      channel = supabase
+        .channel(`notif-feed-${auth.user.id}`)
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${auth.user.id}` }, async (payload) => {
+          const n = payload.new as Notif;
+          setItems((old) => (old.some((o) => o.id === n.id) ? old : [n, ...old]));
+          const { data: p } = await supabase.from("profiles").select("id,name,is_founder,avatar_url").eq("id", n.actor_id).maybeSingle();
+          if (p) {
+            setProfiles((m) => ({ ...m, [p.id]: p as Profile }));
+            if (p.avatar_url) { const signed = await getSignedUrls([p.avatar_url]); setAvatars((a) => ({ ...a, ...signed })); }
+          }
+          void (supabase as any).from("notifications").update({ read: true }).eq("id", n.id);
+        })
+        .subscribe();
     })();
+    return () => { if (channel) supabase.removeChannel(channel); };
   }, [navigate]);
 
   return (
@@ -156,11 +171,20 @@ function labelFor(t: Notif["type"]) {
       return "replied to your comment";
     case "comment_like":
       return "liked your comment";
+    case "reaction":
+      return "reacted to your post";
+    case "share":
+      return "shared your post";
+    case "story_reply":
+      return "replied to your story";
+    case "poll_vote":
+      return "voted on your poll";
   }
 }
 
 function iconFor(t: Notif["type"]) {
   if (t === "like" || t === "comment_like") return <Heart size={16} className="text-primary" />;
-  if (t === "comment" || t === "comment_reply") return <MessageCircle size={16} className="text-primary" />;
+  if (t === "poll_vote") return <BarChart3 size={16} className="text-primary" />;
+  if (t === "comment" || t === "comment_reply" || t === "story_reply") return <MessageCircle size={16} className="text-primary" />;
   return <UserPlus size={16} className="text-primary" />;
 }

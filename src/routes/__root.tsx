@@ -16,6 +16,7 @@ import { Toaster } from "sonner";
 import { UpdateBanner } from "@/components/UpdateBanner";
 import { LumenNotifier } from "@/components/LumenNotifier";
 import { CallOverlay } from "@/components/CallOverlay";
+import { BottomNav } from "@/components/BottomNav";
 import { initTheme } from "@/lib/theme";
 
 function NotFoundComponent() {
@@ -149,6 +150,7 @@ function RootComponent() {
       <UpdateBanner />
       <LumenNotifier />
       <CallOverlay />
+      <BottomNav />
       <Toaster position="top-center" richColors />
     </QueryClientProvider>
   );
