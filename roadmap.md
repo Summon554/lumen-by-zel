@@ -1,4 +1,4 @@
-- [ ] Daily Spark banner, linked responses and community feed
-- [ ] Downloadable/shareable profile Glow Card with QR
-- [ ] Interactive two-option story polls with one vote per story
-- [ ] Verify access rules and desktop/mobile interactions
+- [x] Daily Spark banner, linked responses and community feed
+- [x] Downloadable/shareable profile Glow Card with QR
+- [x] Interactive two-option story polls with one vote per story
+- [ ] Cross-account poll vote test — needs a second real account on another device
