@@ -68,7 +68,7 @@ export function LumenNotifier() {
             const kind =
               n.type === "follow" || n.type === "follow_request"
                 ? "follows"
-                : n.type === "reaction" || n.type === "like" || n.type === "share"
+                : n.type === "reaction" || n.type === "like" || n.type === "share" || n.type === "story_reply" || n.type === "poll_vote"
                   ? "reactions"
                   : null;
             if (!kind) return;
@@ -76,7 +76,11 @@ export function LumenNotifier() {
             if (!shouldSend(prefsRef.current, kind, { activeUrl: window.location.pathname, targetUrl })) return;
             const name = await nameOf(n.actor_id);
             const body =
-              n.type === "share"
+              n.type === "story_reply"
+                ? `${name} replied to your story`
+                : n.type === "poll_vote"
+                ? `${name} voted on your poll`
+                : n.type === "share"
                 ? `${name} shared your post`
                 : n.type === "reaction"
                   ? `${name} reacted ${emojiFor((payload.new as any).reaction_type)} to your post`

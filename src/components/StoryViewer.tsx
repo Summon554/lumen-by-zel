@@ -8,6 +8,7 @@ import { LumenAvatar } from "@/components/LumenAvatar";
 import { stickerLabel } from "@/components/StoryComposer";
 import { STORY_PRIVACY_LABELS, timeLeft, type StoryRow } from "@/lib/stories";
 import { StoryPoll } from "@/components/StoryPoll";
+import { StoryQuestion } from "@/components/StoryQuestion";
 
 /** Full-screen story player. Tap right/left to move between a user's stories. */
 export function StoryViewer({
@@ -119,7 +120,7 @@ export function StoryViewer({
         {story.stickers?.length > 0 && (
           <div className="pointer-events-none absolute bottom-4 left-0 right-0 z-10 flex max-h-[65%] flex-wrap justify-center gap-2 overflow-y-auto px-4">
             {story.stickers.map((s, i) => (
-              s.kind === "poll" ? <StoryPoll key={`${story.id}-${i}`} story={story} poll={s} meId={meId}/> : <span key={i} className="rounded-full bg-white/90 px-3 py-1 text-xs text-black">
+              s.kind === "poll" ? <StoryPoll key={`${story.id}-${i}`} story={story} poll={s} meId={meId}/> : s.kind === "question" ? <StoryQuestion key={`${story.id}-q${i}`} story={story} prompt={s.prompt} meId={meId}/> : <span key={i} className="rounded-full bg-white/90 px-3 py-1 text-xs text-black">
                 {stickerLabel(s)}
               </span>
             ))}
